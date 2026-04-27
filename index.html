@@ -1430,6 +1430,95 @@
   </div>
 </div>
 
+<!-- MODAL EDICIÓN DE DATOS -->
+<div class="modal-overlay" id="modal-edicion">
+  <div class="modal" style="max-width:460px;max-height:92vh;overflow-y:auto;">
+    <h3 id="edit-titulo">✏️ EDITAR DATOS</h3>
+
+    <!-- CLIENTE -->
+    <div class="card-title" style="margin:0 0 8px;padding:6px 0;font-size:10px;letter-spacing:2px;">👤 CLIENTE</div>
+    <div class="field"><label>Cliente / Razón Social</label>
+      <input type="text" id="edit-cliente"></div>
+    <div class="row">
+      <div class="field"><label>CUIT / DNI</label>
+        <input type="text" id="edit-cuit"></div>
+      <div class="field"><label>Teléfono</label>
+        <input type="tel" id="edit-tel"></div>
+    </div>
+    <div class="field"><label>Dirección</label>
+      <input type="text" id="edit-direccion"></div>
+    <div class="row">
+      <div class="field"><label>CP</label>
+        <input type="text" id="edit-cp"></div>
+      <div class="field"><label>Ciudad</label>
+        <input type="text" id="edit-ciudad"></div>
+      <div class="field"><label>Provincia</label>
+        <input type="text" id="edit-provincia"></div>
+    </div>
+
+    <!-- EQUIPO -->
+    <div class="card-title" style="margin:12px 0 8px;padding:6px 0;font-size:10px;letter-spacing:2px;">🔧 EQUIPO</div>
+    <div class="field"><label>Tipo de Equipo</label>
+      <select id="edit-equipo" class="estado-select" style="border-color:var(--border);">
+        <option>Soldadora Inverter</option>
+        <option>Monopatín Eléctrico</option>
+        <option>Máquina Gym</option>
+        <option>Cinta de Correr</option>
+        <option>Máquina Eléctrica</option>
+      </select>
+    </div>
+    <div class="field"><label>Marca / Modelo</label>
+      <input type="text" id="edit-modelo"></div>
+    <div class="field"><label>Falla Declarada</label>
+      <textarea id="edit-falla" style="min-height:60px;"></textarea></div>
+    <div class="field"><label>Error Declarado</label>
+      <input type="text" id="edit-error"></div>
+
+    <!-- Campos extra OTT -->
+    <div id="edit-extra-ott" style="display:none;">
+      <div class="card-title" style="margin:12px 0 8px;padding:6px 0;font-size:10px;letter-spacing:2px;">🔬 DIAGNÓSTICO</div>
+      <div class="field"><label>Diagnóstico</label>
+        <textarea id="edit-diagnostico" style="min-height:60px;"></textarea></div>
+      <div class="field"><label>Trabajo a Realizar</label>
+        <textarea id="edit-trabajo" style="min-height:60px;"></textarea></div>
+      <div class="row">
+        <div class="field"><label>Presupuesto $</label>
+          <input type="number" id="edit-total"></div>
+        <div class="field"><label>Adelanto $</label>
+          <input type="number" id="edit-adelanto"></div>
+        <div class="field"><label>Saldo $</label>
+          <input type="number" id="edit-saldo"></div>
+      </div>
+      <div class="row">
+        <div class="field"><label>Garantía</label>
+          <input type="text" id="edit-garantia"></div>
+        <div class="field"><label>Tiempo estimado</label>
+          <input type="text" id="edit-tiempo"></div>
+      </div>
+    </div>
+
+    <!-- Campos extra OTE -->
+    <div id="edit-extra-ote" style="display:none;">
+      <div class="card-title" style="margin:12px 0 8px;padding:6px 0;font-size:10px;letter-spacing:2px;">📋 TRABAJO</div>
+      <div class="field"><label>Descripción del Servicio</label>
+        <textarea id="edit-desc-servicio" style="min-height:60px;"></textarea></div>
+      <div class="field"><label>Trabajo Realizado</label>
+        <textarea id="edit-trabajo-realizado" style="min-height:60px;"></textarea></div>
+      <div class="row">
+        <div class="field"><label>Mano de Obra $</label>
+          <input type="number" id="edit-mano-obra"></div>
+        <div class="field"><label>Total General $</label>
+          <input type="number" id="edit-total-general"></div>
+      </div>
+    </div>
+
+    <div class="modal-btns" style="margin-top:14px;">
+      <button class="btn btn-primary" onclick="guardarEdicion()">💾 GUARDAR CAMBIOS</button>
+      <button class="btn btn-secondary" onclick="cerrarEdicion()">CANCELAR</button>
+    </div>
+  </div>
+</div>
+
 <!-- MODAL BÚSQUEDA RÁPIDA -->
 <div class="modal-overlay" id="modal-busqueda">
   <div class="modal" style="max-width:460px;">
@@ -1688,27 +1777,27 @@ function imprimirPDFA4() {
   const W = 210;
   let y = 15;
 
-  // ENCABEZADO
-  doc.setFillColor(15, 15, 15);
-  doc.rect(0, 0, W, 40, "F");
+  // ENCABEZADO — gris oscuro, datos legibles
+  doc.setFillColor(55, 55, 55);
+  doc.rect(0, 0, W, 42, "F");
 
   doc.setTextColor(232, 160, 32);
   doc.setFontSize(28);
   doc.setFont("helvetica", "bold");
   doc.text("ELECTROMEL", W / 2, y + 8, { align: "center" });
 
-  doc.setTextColor(180, 180, 180);
+  doc.setTextColor(220, 220, 220);
   doc.setFontSize(10);
   doc.setFont("helvetica", "normal");
   doc.text(EMPRESA.sub, W / 2, y + 16, { align: "center" });
 
-  // Datos empresa
-  doc.setFontSize(8);
-  doc.setTextColor(200, 200, 200);
+  // Datos empresa — blanco claro para que se lean bien
+  doc.setFontSize(8.5);
+  doc.setTextColor(255, 255, 255);
   const emp1 = `CUIT: ${EMPRESA.cuit}  |  IIBB: ${EMPRESA.iibb}  |  ${EMPRESA.iva}`;
   const emp2 = `${EMPRESA.domicilio} · ${EMPRESA.ciudad}  |  Tel: ${EMPRESA.tel}  |  ${EMPRESA.email}`;
-  doc.text(emp1, W / 2, y + 23, { align: "center" });
-  doc.text(emp2, W / 2, y + 28, { align: "center" });
+  doc.text(emp1, W / 2, y + 24, { align: "center" });
+  doc.text(emp2, W / 2, y + 30, { align: "center" });
 
   y = 48;
 
@@ -1834,234 +1923,221 @@ function campoPDF(doc, label, valor, x, y) {
 // ==================== TICKET 57x220mm ====================
 function imprimirTicket() {
   const d = ultimoIngreso;
-  const W_MM = 57, H_MM = 220;
-  const DPI = 203; // Resolución típica impresora térmica
-  const W_PX = Math.round(W_MM * DPI / 25.4);
-  const H_PX = Math.round(H_MM * DPI / 25.4);
+  const SCALE = 5; // más resolución = letras más gruesas
+  const W_MM = 57, H_MM = 250;
+  const W_PX = Math.round(W_MM * SCALE * 96 / 25.4);
+  const H_PX = Math.round(H_MM * SCALE * 96 / 25.4);
 
   const canvas = document.createElement("canvas");
-  canvas.width = W_PX;
+  canvas.width  = W_PX;
   canvas.height = H_PX;
   const ctx = canvas.getContext("2d");
-
-  // Fondo blanco
   ctx.fillStyle = "#fff";
   ctx.fillRect(0, 0, W_PX, H_PX);
 
-  ctx.fillStyle = "#000";
-  let y = 0;
+  const PAD = 8 * SCALE;
+  let y = 20 * SCALE;
 
-  function drawText(text, size, bold, align = "left", x = null) {
-    ctx.font = `${bold ? "bold" : "normal"} ${size}px 'Courier New', monospace`;
-    const textX = align === "center" ? W_PX / 2 : (x ?? 10);
-    ctx.textAlign = align === "center" ? "center" : "left";
-    ctx.fillText(text, textX, y);
-    y += size * 1.3;
-  }
+  const horaStr = d.fechaISO
+    ? new Date(d.fechaISO).toLocaleTimeString("es-AR",{hour:"2-digit",minute:"2-digit",hour12:false})
+    : (d.horaStr||"");
 
-  function drawLine() {
-    ctx.fillRect(0, y, W_PX, 2);
-    y += 8;
-  }
-
-  function drawDashes() {
-    ctx.font = "bold 18px Courier New";
-    ctx.textAlign = "center";
-    ctx.fillText("- - - - - - - - - - - - -", W_PX / 2, y);
-    y += 26;
-  }
-
-  y = 30;
-
-  // Encabezado
-  drawText("ELECTROMEL", 34, true, "center");
-  drawText("Servicio Técnico", 20, false, "center");
-  drawText("Soldadoras Inverter", 20, false, "center");
-  y += 6;
-  drawLine();
-
-  drawText(`CUIT: ${EMPRESA.cuit}`, 17, false, "center");
-  drawText(`IIBB: ${EMPRESA.iibb}`, 17, false, "center");
-  drawText(EMPRESA.domicilio, 17, false, "center");
-  drawText(`Tel: ${EMPRESA.tel}`, 17, false, "center");
-  drawText(EMPRESA.email, 15, false, "center");
-  y += 4;
-  drawLine();
-
-  drawText("RECIBO DE INGRESO", 22, true, "center");
-  drawText(`N°: ${d.numero}`, 26, true, "center");
-  drawText(`Fecha: ${d.fechaStr}`, 18, false, "center");
-  drawText(`Hora: ${d.horaStr}`, 18, false, "center");
-  y += 4;
-  drawLine();
-
-  drawText("CLIENTE", 20, true, "center");
-  y += 4;
-  drawText(`Cliente: ${d.cliente}`, 18, true);
-  if (d.cuit) drawText(`CUIT/DNI: ${d.cuit}`, 17, false);
-  if (d.tel) drawText(`Tel: ${d.tel}`, 17, false);
-  if (d.direccion) drawText(`Dir: ${d.direccion}`, 17, false);
-  if (d.ciudad) drawText(`${d.ciudad} ${d.cp}`, 17, false);
-  if (d.provincia) drawText(`Prov: ${d.provincia}`, 17, false);
-  y += 4;
-  drawLine();
-
-  drawText("EQUIPO", 20, true, "center");
-  y += 4;
-  drawText(`Equipo: ${d.equipo}`, 18, true);
-  if (d.modelo) drawText(`Marca/Modelo: ${d.modelo}`, 17, false);
-  if (d.falla) {
-    drawText("Falla declarada:", 17, true);
-    // Wrap texto largo
-    const words = d.falla.split(" ");
-    let line = "";
-    ctx.font = "normal 17px Courier New";
+  function txt(t, pt, bold, center) {
+    const px = pt * SCALE;
+    ctx.font = `${bold?"900":"700"} ${px}px "Courier New",monospace`;
+    ctx.fillStyle = "#000";
+    ctx.textAlign = center ? "center" : "left";
+    const xPos = center ? W_PX/2 : PAD;
+    const maxW = W_PX - PAD*2;
+    const words = String(t||"").split(" ");
+    let linea = "";
     for (const w of words) {
-      const test = line + w + " ";
-      if (ctx.measureText(test).width > W_PX - 20 && line) {
-        ctx.textAlign = "left";
-        ctx.fillText(line.trim(), 10, y);
-        y += 22;
-        line = w + " ";
-      } else { line = test; }
+      const prueba = linea + w + " ";
+      if (ctx.measureText(prueba).width > maxW && linea) {
+        ctx.fillText(linea.trim(), xPos, y);
+        y += px * 1.5;
+        linea = w + " ";
+      } else { linea = prueba; }
     }
-    if (line.trim()) { ctx.textAlign = "left"; ctx.fillText(line.trim(), 10, y); y += 22; }
+    ctx.fillText(linea.trim(), xPos, y);
+    y += px * 1.5;
   }
-  if (d.error) drawText(`Error: ${d.error}`, 17, false);
-  y += 4;
-  drawLine();
 
-  drawText("CONDICIONES DEL SERVICIO", 17, true, "center");
-  y += 4;
-  const conds = [
+  function esp(mm) { y += mm * SCALE; }
+
+  function sep(label) {
+    esp(5);
+    txt("─── " + label + " ───", 8, true, true);
+    esp(3);
+  }
+
+  function firma(label) {
+    txt(label, 9, true, false);
+    esp(18);
+    ctx.strokeStyle = "#000";
+    ctx.lineWidth = 2 * SCALE;
+    ctx.beginPath();
+    ctx.moveTo(PAD, y);
+    ctx.lineTo(W_PX - PAD, y);
+    ctx.stroke();
+    esp(14);
+  }
+
+  // ── ENCABEZADO ──
+  txt("ELECTROMEL", 20, true, true);
+  esp(2);
+  txt("Servicio Técnico", 9, false, true);
+  txt("Soldadoras Inverter", 9, false, true);
+  esp(4);
+  txt(`CUIT: ${EMPRESA.cuit}`, 8, false, true);
+  txt(`IIBB: ${EMPRESA.iibb}`, 8, false, true);
+  txt(`${EMPRESA.domicilio} · ${EMPRESA.ciudad}`, 8, false, true);
+  txt(`Tel: ${EMPRESA.tel}`, 8, false, true);
+  txt(EMPRESA.email, 7.5, false, true);
+  esp(6);
+
+  sep("RECIBO DE INGRESO");
+  txt(`N°: ${d.numero}`, 16, true, true);
+  esp(2);
+  txt(`Fecha: ${d.fechaStr}   Hora: ${horaStr}`, 9, false, true);
+  esp(6);
+
+  sep("CLIENTE");
+  txt(`Cliente: ${d.cliente||"—"}`, 11, true, false);
+  if (d.cuit)      txt(`CUIT/DNI: ${d.cuit}`, 9.5, false, false);
+  if (d.tel)       txt(`Tel: ${d.tel}`, 9.5, false, false);
+  if (d.direccion) txt(`Dir: ${d.direccion}`, 9.5, false, false);
+  if (d.ciudad)    txt(`${d.ciudad}  CP: ${d.cp||""}`, 9.5, false, false);
+  if (d.provincia) txt(`Provincia: ${d.provincia}`, 9.5, false, false);
+  esp(6);
+
+  sep("EQUIPO");
+  txt(`Equipo: ${d.equipo||"—"}`, 11, true, false);
+  if (d.modelo) txt(`Marca/Modelo: ${d.modelo}`, 9.5, false, false);
+  if (d.falla) { txt("Falla declarada:", 9.5, true, false); txt(d.falla, 9.5, false, false); }
+  if (d.error) txt(`Error: ${d.error}`, 9.5, false, false);
+  esp(6);
+
+  sep("CONDICIONES DEL SERVICIO");
+  [
     "- Diagnóstico: 24 a 48 hs hábiles",
     "- Presupuesto previo a reparación",
     "- Garantía sobre trabajo realizado",
-    "- Retirar en 30 días o se cobra",
-    "  almacenamiento",
-    "- Pasados 120 días: abandono",
-  ];
-  conds.forEach(c => drawText(c, 16, false));
-  y += 6;
-  drawLine();
+    "- Retirar en 30 días o se cobra almacenamiento",
+    "- Pasados 120 días: abandono del equipo",
+  ].forEach(c => txt(c, 9, false, false));
+  esp(8);
 
-  drawText("Firma cliente:", 20, true);
-  y += 50;
-  ctx.fillRect(10, y, W_PX - 20, 2);
-  y += 10;
-  drawText("Aclaración:", 20, true);
-  y += 40;
-  ctx.fillRect(10, y, W_PX - 20, 2);
-  y += 10;
-  drawText("Fecha:", 20, true);
-  y += 40;
-  ctx.fillRect(10, y, W_PX - 20, 2);
-  y += 20;
-  drawLine();
+  firma("Firma cliente:");
+  firma("Aclaración:");
+  firma("Fecha:");
+  esp(6);
 
-  drawText("GRACIAS POR CONFIAR", 19, true, "center");
-  drawText("EN ELECTROMEL 😊", 19, true, "center");
+  txt("GRACIAS POR CONFIAR EN ELECTROMEL 😊", 10, true, true);
+  esp(20);
 
-  // Generar descarga
-  const link = document.createElement("a");
-  link.download = `Ticket-${d.numero}.png`;
-  link.href = canvas.toDataURL("image/png");
-  link.click();
+  // Recortar al contenido real
+  const fin = document.createElement("canvas");
+  fin.width  = W_PX;
+  fin.height = Math.min(y, H_PX);
+  fin.getContext("2d").drawImage(canvas, 0, 0);
+
+  const a = document.createElement("a");
+  a.download = `Ticket-${d.numero}.png`;
+  a.href = fin.toDataURL("image/png");
+  a.click();
   showToast("✅ Ticket generado");
 }
+
+
+
 
 // ==================== ETIQUETA 55x30mm ====================
 function imprimirEtiqueta() {
   const d = ultimoIngreso;
+  const SCALE = 11; // alta resolución
   const W_MM = 55, H_MM = 30;
-  const DPI = 203;
-  const W_PX = Math.round(W_MM * DPI / 25.4);
-  const H_PX = Math.round(H_MM * DPI / 25.4);
+  const W_PX = Math.round(W_MM * SCALE * 96 / 25.4);
+  const H_PX = Math.round(H_MM * SCALE * 96 / 25.4);
 
-  // Armar número WA del cliente
   const telLimpio = (d.tel || "").replace(/\D/g, "");
-  const waURL = telLimpio
-    ? `https://wa.me/549${telLimpio}`
-    : `https://wa.me/549${EMPRESA.tel}`;
+  const waURL = telLimpio ? `https://wa.me/549${telLimpio}` : `https://wa.me/549${EMPRESA.tel}`;
 
-  // Generar QR en un div oculto
+  const qrPX = Math.round(H_PX * 0.80);
   const qrDiv = document.createElement("div");
-  qrDiv.style.cssText = "position:absolute;left:-9999px;top:-9999px;";
+  qrDiv.style.cssText = "position:fixed;left:-9999px;top:0;";
   document.body.appendChild(qrDiv);
-
-  const qrSize = H_PX - 20; // tamaño del QR en px
 
   new QRCode(qrDiv, {
     text: waURL,
-    width:  qrSize,
-    height: qrSize,
-    colorDark:  "#000000",
-    colorLight: "#ffffff",
+    width: qrPX, height: qrPX,
+    colorDark: "#000000", colorLight: "#ffffff",
     correctLevel: QRCode.CorrectLevel.M,
   });
 
-  // Esperar que se renderice el QR (es síncrono con QRCode.js)
-  setTimeout(() => {
-    const qrImg = qrDiv.querySelector("img") || qrDiv.querySelector("canvas");
-
+  function dibujar() {
+    const qrSrc = qrDiv.querySelector("canvas") || qrDiv.querySelector("img");
     const canvas = document.createElement("canvas");
     canvas.width  = W_PX;
     canvas.height = H_PX;
     const ctx = canvas.getContext("2d");
 
-    // Fondo blanco
     ctx.fillStyle = "#fff";
     ctx.fillRect(0, 0, W_PX, H_PX);
+    ctx.strokeStyle = "#000";
+    ctx.lineWidth = 3 * SCALE;
+    ctx.strokeRect(3, 3, W_PX - 6, H_PX - 6);
+
+    // QR lado derecho
+    const margen = 4 * SCALE;
+    const qrX = W_PX - qrPX - margen;
+    const qrY = Math.round((H_PX - qrPX) / 2);
+    if (qrSrc) ctx.drawImage(qrSrc, qrX, qrY, qrPX, qrPX);
+
+    ctx.fillStyle = "#000";
+    ctx.font = `bold ${4 * SCALE}px "Courier New"`;
+    ctx.textAlign = "center";
+    ctx.fillText("WhatsApp", qrX + qrPX / 2, qrY + qrPX + 5 * SCALE);
+
+    // Texto lado izquierdo — letras MÁS GRANDES
+    const txtMaxW = qrX - 6 * SCALE;
+    const PAD = 5 * SCALE;
+    let y = 14 * SCALE;
+    ctx.textAlign = "left";
     ctx.fillStyle = "#000";
 
-    // Borde
-    ctx.strokeStyle = "#000";
-    ctx.lineWidth = 4;
-    ctx.strokeRect(2, 2, W_PX - 4, H_PX - 4);
-
-    // Área de texto — dejar espacio a la derecha para el QR
-    const qrX   = W_PX - qrSize - 8;
-    const txtW  = qrX - 14;
-
-    let y = 20;
-    function dt(text, size, bold, maxW) {
-      ctx.font = `${bold ? "bold" : "normal"} ${size}px 'Courier New', monospace`;
-      ctx.textAlign = "left";
-      // Truncar si es muy largo
-      let t = text;
-      while (ctx.measureText(t).width > (maxW || txtW) && t.length > 3) {
-        t = t.slice(0, -1);
-      }
-      ctx.fillText(t, 10, y);
-      y += size * 1.3;
+    function dt(texto, mm, negrita) {
+      if (!texto) return;
+      const px = mm * SCALE;
+      ctx.font = `${negrita ? "900" : "800"} ${px}px "Courier New", monospace`;
+      let t = String(texto);
+      while (t.length > 2 && ctx.measureText(t).width > txtMaxW) t = t.slice(0, -1);
+      ctx.fillText(t, PAD, y);
+      y += px * 1.45;
     }
 
-    dt("ELECTROMEL",        20, true);
-    dt(d.numero,            17, true);
-    dt(d.cliente || "—",    15, true);
-    if (d.tel) dt(`Tel: ${d.tel}`, 13, false);
-    dt(d.equipo || "—",     13, true);
-    if (d.modelo) dt(d.modelo, 12, false);
-
-    // Dibujar QR
-    if (qrImg) {
-      ctx.drawImage(qrImg, qrX, 8, qrSize, qrSize);
-    }
-
-    // Etiqueta "WA" debajo del QR
-    ctx.font = "bold 11px Courier New";
-    ctx.textAlign = "center";
-    ctx.fillText("WhatsApp", qrX + qrSize / 2, 10 + qrSize + 12);
+    // Tamaños 2.5x más grandes que antes (antes: 5.5, 4.5, 4, 3.5)
+    dt("ELECTROMEL",       8,   true);
+    dt(d.numero,           7,   true);
+    dt(d.cliente || "—",   6.5, true);
+    dt(`Tel: ${d.tel||""}`,5.5, false);
+    dt(d.equipo || "—",    5.5, true);
+    if (d.modelo) dt(d.modelo, 5, false);
 
     document.body.removeChild(qrDiv);
 
-    const link = document.createElement("a");
-    link.download = `Etiqueta-${d.numero}.png`;
-    link.href = canvas.toDataURL("image/png");
-    link.click();
-    showToast("✅ Etiqueta con QR generada");
-  }, 100);
+    const a = document.createElement("a");
+    a.download = `Etiqueta-${d.numero}.png`;
+    a.href = canvas.toDataURL("image/png");
+    a.click();
+    showToast("✅ Etiqueta generada");
+  }
+
+  setTimeout(dibujar, 250);
 }
+
+
+
 
 // ==================== OTT — DB ====================
 function initDB() {
@@ -2277,17 +2353,17 @@ function imprimirPDFOTT() {
   let y = 15;
 
   // Encabezado negro
-  doc.setFillColor(15, 15, 15);
+  doc.setFillColor(55, 55, 55);
   doc.rect(0, 0, W, 40, "F");
   doc.setTextColor(232, 160, 32);
   doc.setFontSize(28); doc.setFont("helvetica", "bold");
   doc.text("ELECTROMEL", W / 2, y + 8, { align: "center" });
-  doc.setTextColor(180, 180, 180);
+  doc.setTextColor(220, 220, 220);
   doc.setFontSize(10); doc.setFont("helvetica", "normal");
   doc.text(EMPRESA.sub, W / 2, y + 16, { align: "center" });
-  doc.setFontSize(8); doc.setTextColor(200, 200, 200);
-  doc.text(`CUIT: ${EMPRESA.cuit}  |  IIBB: ${EMPRESA.iibb}  |  ${EMPRESA.iva}`, W / 2, y + 23, { align: "center" });
-  doc.text(`${EMPRESA.domicilio} · ${EMPRESA.ciudad}  |  Tel: ${EMPRESA.tel}  |  ${EMPRESA.email}`, W / 2, y + 28, { align: "center" });
+  doc.setFontSize(8.5); doc.setTextColor(255, 255, 255);
+  doc.text(`CUIT: ${EMPRESA.cuit}  |  IIBB: ${EMPRESA.iibb}  |  ${EMPRESA.iva}`, W / 2, y + 24, { align: "center" });
+  doc.text(`${EMPRESA.domicilio} · ${EMPRESA.ciudad}  |  Tel: ${EMPRESA.tel}  |  ${EMPRESA.email}`, W / 2, y + 30, { align: "center" });
   y = 48;
 
   doc.setDrawColor(232, 160, 32); doc.setLineWidth(0.5);
@@ -2564,17 +2640,17 @@ function imprimirPDFOTE() {
   let y = 15;
 
   // Encabezado
-  doc.setFillColor(15, 15, 15);
+  doc.setFillColor(55, 55, 55);
   doc.rect(0, 0, W, 40, "F");
   doc.setTextColor(232, 160, 32);
   doc.setFontSize(28); doc.setFont("helvetica", "bold");
   doc.text("ELECTROMEL", W / 2, y + 8, { align: "center" });
-  doc.setTextColor(180, 180, 180);
+  doc.setTextColor(220, 220, 220);
   doc.setFontSize(10); doc.setFont("helvetica", "normal");
   doc.text(EMPRESA.sub, W / 2, y + 16, { align: "center" });
-  doc.setFontSize(8); doc.setTextColor(200, 200, 200);
-  doc.text(`CUIT: ${EMPRESA.cuit}  |  IIBB: ${EMPRESA.iibb}  |  ${EMPRESA.iva}`, W / 2, y + 23, { align: "center" });
-  doc.text(`${EMPRESA.domicilio} · ${EMPRESA.ciudad}  |  Tel: ${EMPRESA.tel}  |  ${EMPRESA.email}`, W / 2, y + 28, { align: "center" });
+  doc.setFontSize(8.5); doc.setTextColor(255, 255, 255);
+  doc.text(`CUIT: ${EMPRESA.cuit}  |  IIBB: ${EMPRESA.iibb}  |  ${EMPRESA.iva}`, W / 2, y + 24, { align: "center" });
+  doc.text(`${EMPRESA.domicilio} · ${EMPRESA.ciudad}  |  Tel: ${EMPRESA.tel}  |  ${EMPRESA.email}`, W / 2, y + 30, { align: "center" });
   y = 48;
 
   doc.setDrawColor(232, 160, 32); doc.setLineWidth(0.5);
@@ -2891,8 +2967,9 @@ function abrirDetalle(id, tipo) {
   req.onsuccess = e => {
     const r = e.target.result;
     if (!r) return;
-    detalleActual = { ...r, tipo, store };
-    mostrarDetalle(r, tipo);
+    // Asegurar que tipo y store están siempre presentes
+    detalleActual = { ...r, tipo: tipo, store: store };
+    mostrarDetalle(detalleActual, tipo);
   };
 }
 
@@ -2998,6 +3075,19 @@ function mostrarDetalle(r, tipo) {
   let btnHTML = `<button class="btn btn-primary" onclick="guardarDetalle()">💾 GUARDAR TODO</button>`;
   if (r.tel) btnHTML += `<button class="btn btn-whatsapp" onclick="enviarWADetalle()">📲 WHATSAPP</button>`;
   btnHTML += `<button class="btn btn-secondary" onclick="abrirFotos('${r.store}',${r.id},'${r.numero}')">📷 FOTOS</button>`;
+  btnHTML += `<button class="btn btn-secondary" style="border-color:var(--accent);color:var(--accent);" onclick="abrirEdicion()">✏️ EDITAR DATOS</button>`;
+  // Botones impresión — usar tipo del parámetro, no de r
+  if (tipo === "ingreso") {
+    btnHTML += `<button class="btn btn-secondary" style="background:var(--surface2);" onclick="reimprimir('pdfa4')">🖨️ PDF A4</button>`;
+    btnHTML += `<button class="btn btn-secondary" style="background:var(--surface2);" onclick="reimprimir('ticket')">🧾 TICKET</button>`;
+    btnHTML += `<button class="btn btn-secondary" style="background:var(--surface2);" onclick="reimprimir('etiqueta')">🏷️ ETIQUETA</button>`;
+  }
+  if (tipo === "taller") {
+    btnHTML += `<button class="btn btn-secondary" style="background:var(--surface2);" onclick="reimprimir('ott')">🖨️ PDF OTT</button>`;
+  }
+  if (tipo === "exterior") {
+    btnHTML += `<button class="btn btn-secondary" style="background:var(--surface2);" onclick="reimprimir('ote')">🖨️ PDF OTE</button>`;
+  }
   btns.innerHTML = btnHTML;
 
   document.getElementById("modal-detalle").classList.add("show");
@@ -4512,6 +4602,143 @@ function verFotoEgreso(dataURL) {
 function cerrarVisorFoto() {
   document.getElementById("modal-visor-foto").classList.remove("show");
   document.getElementById("visor-foto-img").src = "";
+}
+
+
+
+// ==================== EDICIÓN DE DATOS ====================
+
+function abrirEdicion() {
+  const r = detalleActual;
+  if (!r) return;
+
+  document.getElementById("edit-titulo").textContent = "✏️ EDITAR — " + r.numero;
+
+  // Campos comunes cliente + equipo
+  const set = (id, val) => {
+    const el = document.getElementById(id);
+    if (el) el.value = val || "";
+  };
+  set("edit-cliente",   r.cliente);
+  set("edit-cuit",      r.cuit);
+  set("edit-tel",       r.tel);
+  set("edit-direccion", r.direccion);
+  set("edit-cp",        r.cp);
+  set("edit-ciudad",    r.ciudad);
+  set("edit-provincia", r.provincia);
+  set("edit-modelo",    r.modelo);
+  set("edit-falla",     r.falla);
+  set("edit-error",     r.error);
+
+  // Equipo select
+  const selEq = document.getElementById("edit-equipo");
+  if (selEq && r.equipo) {
+    for (let i = 0; i < selEq.options.length; i++) {
+      if (selEq.options[i].value === r.equipo) { selEq.selectedIndex = i; break; }
+    }
+  }
+
+  // Mostrar campos extra según tipo
+  document.getElementById("edit-extra-ott").style.display = r.tipo === "taller"  ? "block" : "none";
+  document.getElementById("edit-extra-ote").style.display = r.tipo === "exterior"? "block" : "none";
+
+  if (r.tipo === "taller") {
+    set("edit-diagnostico", r.diagnostico);
+    set("edit-trabajo",     r.trabajo);
+    set("edit-total",       r.total);
+    set("edit-adelanto",    r.adelantoMonto);
+    set("edit-saldo",       r.saldo);
+    set("edit-garantia",    r.garantia);
+    set("edit-tiempo",      r.tiempo);
+  }
+  if (r.tipo === "exterior") {
+    set("edit-desc-servicio",     r.descServicio);
+    set("edit-trabajo-realizado", r.trabajoRealizado);
+    set("edit-mano-obra",         r.manoObra);
+    set("edit-total-general",     r.totalGeneral);
+  }
+
+  document.getElementById("modal-edicion").classList.add("show");
+}
+
+function cerrarEdicion() {
+  document.getElementById("modal-edicion").classList.remove("show");
+}
+
+function guardarEdicion() {
+  const r     = detalleActual;
+  const store = r.store;
+
+  const tx  = db.transaction(store, "readwrite");
+  const req = tx.objectStore(store).get(r.id);
+  req.onsuccess = e => {
+    const rec = e.target.result;
+
+    // Actualizar campos cliente + equipo
+    const get = id => document.getElementById(id)?.value.trim() || "";
+    rec.cliente   = get("edit-cliente");
+    rec.cuit      = get("edit-cuit");
+    rec.tel       = get("edit-tel");
+    rec.direccion = get("edit-direccion");
+    rec.cp        = get("edit-cp");
+    rec.ciudad    = get("edit-ciudad");
+    rec.provincia = get("edit-provincia");
+    rec.equipo    = get("edit-equipo");
+    rec.modelo    = get("edit-modelo");
+    rec.falla     = get("edit-falla");
+    rec.error     = get("edit-error");
+
+    // Campos extra OTT
+    if (r.tipo === "taller") {
+      rec.diagnostico  = get("edit-diagnostico");
+      rec.trabajo      = get("edit-trabajo");
+      rec.total        = get("edit-total");
+      rec.adelantoMonto= get("edit-adelanto");
+      rec.saldo        = get("edit-saldo");
+      rec.garantia     = get("edit-garantia");
+      rec.tiempo       = get("edit-tiempo");
+    }
+    // Campos extra OTE
+    if (r.tipo === "exterior") {
+      rec.descServicio      = get("edit-desc-servicio");
+      rec.trabajoRealizado  = get("edit-trabajo-realizado");
+      rec.manoObra          = get("edit-mano-obra");
+      rec.totalGeneral      = get("edit-total-general");
+    }
+
+    tx.objectStore(store).put(rec).onsuccess = () => {
+      // Actualizar detalleActual con los nuevos datos
+      detalleActual = { ...rec, tipo: r.tipo, store };
+      cerrarEdicion();
+      showToast("✅ Datos actualizados");
+      cargarPanel();
+    };
+  };
+}
+
+
+
+// ==================== REIMPRIMIR DESDE PANEL ====================
+function reimprimir(tipo) {
+  const r = detalleActual;
+  if (!r) return;
+
+  if (tipo === "pdfa4") {
+    ultimoIngreso = r;
+    imprimirPDFA4();
+  } else if (tipo === "ticket") {
+    ultimoIngreso = r;
+    imprimirTicket();
+  } else if (tipo === "etiqueta") {
+    ultimoIngreso = r;
+    imprimirEtiqueta();
+  } else if (tipo === "ott") {
+    ultimoOTT = r;
+    imprimirPDFOTT();
+  } else if (tipo === "ote") {
+    ultimoOTE = r;
+    imprimirPDFOTE();
+  }
 }
 
 

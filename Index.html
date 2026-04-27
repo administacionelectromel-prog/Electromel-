@@ -1,0 +1,4531 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>ELECTROMEL - Sistema de Gestión</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://accounts.google.com/gsi/client" async defer></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<style>
+  :root {
+    --bg: #0f0f0f;
+    --surface: #1a1a1a;
+    --surface2: #242424;
+    --border: #2e2e2e;
+    --accent: #e8a020;
+    --accent2: #f0b840;
+    --text: #f0f0f0;
+    --text2: #999;
+    --danger: #e05050;
+    --success: #4caf7d;
+    --radius: 8px;
+    --font: 'Courier New', monospace;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font);
+    font-size: 16px;
+    font-weight: 900;
+    min-height: 100vh;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* HEADER */
+  .app-header {
+    background: var(--surface);
+    border-bottom: 2px solid var(--accent);
+    padding: 10px 16px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+  .app-header .logo {
+    font-size: 22px;
+    font-weight: 900;
+    color: var(--accent);
+    letter-spacing: 3px;
+  }
+  .app-header .sub {
+    font-size: 9px;
+    color: var(--text2);
+    letter-spacing: 1px;
+    line-height: 1.4;
+    font-weight: 700;
+  }
+  .header-clock {
+    text-align: right;
+    flex-shrink: 0;
+  }
+  .header-clock .clock-time {
+    font-size: 26px;
+    font-weight: 900;
+    color: var(--accent);
+    letter-spacing: 2px;
+    line-height: 1;
+    font-variant-numeric: tabular-nums;
+  }
+  .header-clock .clock-date {
+    font-size: 10px;
+    font-weight: 700;
+    color: var(--text2);
+    letter-spacing: 1px;
+    margin-top: 3px;
+  }
+
+  /* TABS */
+  .tabs {
+    display: flex;
+    overflow-x: auto;
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    gap: 2px;
+    padding: 0 4px;
+    scrollbar-width: none;
+  }
+  .tabs::-webkit-scrollbar { display: none; }
+  .tab {
+    flex-shrink: 0;
+    padding: 11px 14px;
+    font-family: var(--font);
+    font-size: 11px;
+    font-weight: 900;
+    letter-spacing: 1px;
+    color: var(--text2);
+    background: none;
+    border: none;
+    border-bottom: 3px solid transparent;
+    cursor: pointer;
+    transition: all 0.2s;
+    white-space: nowrap;
+  }
+  .tab:hover { color: var(--accent); }
+  .tab.active {
+    color: var(--accent);
+    border-bottom-color: var(--accent);
+  }
+
+  /* PANEL */
+  .panel { display: none; padding: 16px; max-width: 600px; margin: 0 auto; }
+  .panel.active { display: block; }
+
+  /* SECTION CARD */
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    margin-bottom: 12px;
+    overflow: hidden;
+  }
+  .card-title {
+    background: var(--surface2);
+    border-bottom: 1px solid var(--border);
+    padding: 9px 12px;
+    font-size: 11px;
+    font-weight: 900;
+    letter-spacing: 2px;
+    color: var(--accent);
+    text-transform: uppercase;
+  }
+  .card-body { padding: 12px; }
+
+  /* FORM */
+  .field { margin-bottom: 10px; }
+  .field label {
+    display: block;
+    font-size: 11px;
+    letter-spacing: 1px;
+    color: var(--text2);
+    margin-bottom: 4px;
+    text-transform: uppercase;
+    font-weight: 900;
+  }
+  .field input,
+  .field select,
+  .field textarea {
+    width: 100%;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    color: var(--text);
+    font-family: var(--font);
+    font-size: 16px;
+    font-weight: 900;
+    padding: 10px 10px;
+    outline: none;
+    transition: border-color 0.2s;
+    -webkit-appearance: none;
+  }
+  .field input:focus,
+  .field select:focus,
+  .field textarea:focus {
+    border-color: var(--accent);
+  }
+  .field textarea { resize: vertical; min-height: 60px; }
+  .field select option { background: var(--surface2); }
+
+  .row { display: flex; gap: 8px; }
+  .row .field { flex: 1; }
+
+  /* NUMERO DE INGRESO */
+  .numero-box {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 12px;
+    background: var(--surface2);
+    border: 1px solid var(--accent);
+    border-radius: var(--radius);
+    margin-bottom: 12px;
+  }
+  .numero-box .num {
+    font-size: 22px;
+    font-weight: 900;
+    color: var(--accent);
+    letter-spacing: 2px;
+  }
+  .numero-box .fecha {
+    font-size: 13px;
+    color: var(--text2);
+    text-align: right;
+    font-weight: 900;
+  }
+
+  /* TOGGLE BUTTONS */
+  .toggle-group { display: flex; gap: 6px; }
+  .toggle-btn {
+    flex: 1;
+    padding: 9px;
+    font-family: var(--font);
+    font-size: 13px;
+    font-weight: 900;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    background: var(--surface2);
+    color: var(--text2);
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .toggle-btn.active-no { border-color: var(--danger); color: var(--danger); }
+  .toggle-btn.active-si { border-color: var(--success); color: var(--success); }
+
+  /* ENCOMIENDA EXTRA */
+  .encomienda-extra { display: none; margin-top: 10px; }
+  .encomienda-extra.show { display: block; }
+
+  /* ACTION BUTTONS */
+  .actions {
+    display: flex;
+    gap: 10px;
+    margin-top: 16px;
+    padding-bottom: 30px;
+  }
+  .btn {
+    flex: 1;
+    padding: 13px;
+    font-family: var(--font);
+    font-size: 13px;
+    font-weight: 900;
+    letter-spacing: 1px;
+    border: none;
+    border-radius: var(--radius);
+    cursor: pointer;
+    transition: all 0.15s;
+    text-transform: uppercase;
+  }
+  .btn-primary {
+    background: var(--accent);
+    color: #000;
+  }
+  .btn-primary:active { background: var(--accent2); transform: scale(0.97); }
+  .btn-secondary {
+    background: var(--surface2);
+    color: var(--text);
+    border: 1px solid var(--border);
+  }
+  .btn-secondary:active { transform: scale(0.97); }
+  .btn-success {
+    background: var(--success);
+    color: #000;
+  }
+  .btn-whatsapp {
+    background: #25d366;
+    color: #000;
+  }
+
+  /* MODAL */
+  .modal-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.85);
+    z-index: 200;
+    align-items: center;
+    justify-content: center;
+    padding: 16px;
+  }
+  .modal-overlay.show { display: flex; }
+  .modal {
+    background: var(--surface);
+    border: 1px solid var(--accent);
+    border-radius: var(--radius);
+    width: 100%;
+    max-width: 400px;
+    padding: 20px;
+  }
+  .modal h3 {
+    color: var(--accent);
+    font-size: 14px;
+    letter-spacing: 2px;
+    margin-bottom: 16px;
+    text-align: center;
+  }
+  .modal .modal-btns {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-top: 16px;
+  }
+
+  /* TOAST */
+  .toast {
+    position: fixed;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%) translateY(80px);
+    background: var(--success);
+    color: #000;
+    padding: 10px 20px;
+    border-radius: 20px;
+    font-weight: 700;
+    font-size: 12px;
+    letter-spacing: 1px;
+    transition: transform 0.3s;
+    z-index: 300;
+  }
+  .toast.show { transform: translateX(-50%) translateY(0); }
+
+  /* COMING SOON */
+  .coming-soon {
+    text-align: center;
+    padding: 60px 20px;
+    color: var(--text2);
+  }
+  .coming-soon .icon { font-size: 48px; margin-bottom: 12px; }
+  .coming-soon p { font-size: 12px; letter-spacing: 2px; }
+
+  /* ── PANEL DE CONTROL ── */
+  .orden-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    margin-bottom: 10px;
+    overflow: hidden;
+    cursor: pointer;
+    transition: border-color 0.2s;
+  }
+  .orden-card:active { opacity: 0.85; }
+  .orden-card .orden-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 12px;
+  }
+  .orden-card .orden-num {
+    font-size: 15px;
+    font-weight: 900;
+    letter-spacing: 1px;
+  }
+  .orden-card .orden-cliente {
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--text2);
+    margin-top: 2px;
+  }
+  .orden-card .orden-equipo {
+    font-size: 12px;
+    color: var(--text2);
+    margin-top: 1px;
+  }
+  .semaforo {
+    width: 14px; height: 14px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+  .sem-verde   { background: #4caf7d; box-shadow: 0 0 6px #4caf7d88; }
+  .sem-amarillo{ background: #f0b840; box-shadow: 0 0 6px #f0b84088; }
+  .sem-rojo    { background: #e05050; box-shadow: 0 0 6px #e0505088; }
+  .sem-gris    { background: #555; }
+  .orden-estado-bar {
+    padding: 5px 12px 8px;
+    font-size: 11px;
+    font-weight: 900;
+    letter-spacing: 1px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .badge-dias {
+    font-size: 10px;
+    font-weight: 900;
+    padding: 2px 7px;
+    border-radius: 10px;
+    background: var(--surface2);
+    color: var(--text2);
+  }
+  /* modal detalle */
+  .det-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 6px 0;
+    border-bottom: 1px solid var(--border);
+    font-size: 13px;
+  }
+  .det-row .det-label { color: var(--text2); font-weight: 700; }
+  .det-row .det-val   { font-weight: 900; text-align: right; max-width: 60%; }
+  .estado-select {
+    width: 100%;
+    background: var(--surface2);
+    border: 1px solid var(--accent);
+    border-radius: 4px;
+    color: var(--text);
+    font-family: var(--font);
+    font-size: 14px;
+    font-weight: 900;
+    padding: 9px;
+    margin-top: 12px;
+    -webkit-appearance: none;
+  }
+
+  /* ── CONTABILIDAD ── */
+  .kpi-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 12px;
+    text-align: center;
+  }
+  .kpi-label {
+    font-size: 9px;
+    font-weight: 900;
+    letter-spacing: 1.5px;
+    color: var(--text2);
+    text-transform: uppercase;
+    margin-bottom: 6px;
+  }
+  .kpi-val {
+    font-size: 22px;
+    font-weight: 900;
+    color: var(--text);
+  }
+  .cont-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 12px;
+    border-bottom: 1px solid var(--border);
+    font-size: 12px;
+    font-weight: 700;
+  }
+  .cont-row:last-child { border-bottom: none; }
+  .stock-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 6px 0;
+    border-bottom: 1px solid var(--border);
+    font-size: 13px;
+    font-weight: 700;
+  }
+
+  /* ── FOTOS ── */
+  .foto-thumb {
+    position: relative;
+    width: 80px;
+    height: 80px;
+    border-radius: 6px;
+    overflow: hidden;
+    border: 2px solid var(--border);
+    flex-shrink: 0;
+  }
+  .foto-thumb img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+  }
+  .foto-thumb .foto-del {
+    position: absolute;
+    top: 2px; right: 2px;
+    background: rgba(224,80,80,0.9);
+    border: none;
+    border-radius: 50%;
+    color: #fff;
+    font-size: 11px;
+    font-weight: 900;
+    width: 20px; height: 20px;
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .foto-cat-titulo {
+    font-size: 11px;
+    font-weight: 900;
+    letter-spacing: 1.5px;
+    color: var(--accent);
+    text-transform: uppercase;
+    margin: 12px 0 6px;
+  }
+  .foto-cat-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 8px;
+  }
+</style>
+</head>
+<body>
+
+<div class="app-header">
+  <div>
+    <div class="logo">⚡ ELECTROMEL</div>
+    <div class="sub">SERVICIO TÉCNICO · SOLDADORAS INVERTER</div>
+  </div>
+  <div style="display:flex;align-items:center;gap:10px;">
+    <button onclick="abrirBusqueda()" style="background:none;border:none;cursor:pointer;
+      font-size:22px;padding:4px;" title="Buscar cliente">🔍</button>
+    <div class="header-clock">
+      <div class="clock-time" id="header-time">00:00</div>
+      <div class="clock-date" id="header-date">--/--/----</div>
+    </div>
+  </div>
+</div>
+
+<div class="tabs">
+  <button class="tab active" onclick="showTab('ingreso')">INGRESO</button>
+  <button class="tab" onclick="showTab('ott')">OT TALLER</button>
+  <button class="tab" onclick="showTab('ote')">OT EXTERIOR</button>
+  <button class="tab" onclick="showTab('panel')">PANEL</button>
+  <button class="tab" onclick="showTab('contabilidad')">CONTABILIDAD</button>
+  <button class="tab" onclick="showTab('config')">CONFIG</button>
+</div>
+
+<!-- ==================== PANEL INGRESO ==================== -->
+<div id="panel-ingreso" class="panel active">
+
+  <div class="numero-box">
+    <div class="num" id="num-ingreso">ING-00001</div>
+    <div class="fecha" id="fecha-ingreso">--/--/---- --:--</div>
+  </div>
+
+  <!-- CLIENTE -->
+  <div class="card">
+    <div class="card-title">👤 Cliente</div>
+    <div class="card-body">
+      <div class="field">
+        <label>Cliente / Razón Social</label>
+        <input type="text" id="ing-cliente" placeholder="Nombre o empresa">
+      </div>
+      <div class="row">
+        <div class="field">
+          <label>CUIT / DNI</label>
+          <input type="text" id="ing-cuit" placeholder="XX-XXXXXXXX-X">
+        </div>
+        <div class="field">
+          <label>Teléfono</label>
+          <input type="tel" id="ing-tel" placeholder="299XXXXXXX">
+        </div>
+      </div>
+      <div class="field">
+        <label>Dirección</label>
+        <input type="text" id="ing-direccion" placeholder="Calle y número">
+      </div>
+      <div class="row">
+        <div class="field">
+          <label>CP</label>
+          <input type="text" id="ing-cp" placeholder="8300">
+        </div>
+        <div class="field">
+          <label>Ciudad</label>
+          <input type="text" id="ing-ciudad" placeholder="Neuquén">
+        </div>
+        <div class="field">
+          <label>Provincia</label>
+          <input type="text" id="ing-provincia" placeholder="Neuquén">
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- EQUIPO -->
+  <div class="card">
+    <div class="card-title">🔧 Equipo</div>
+    <div class="card-body">
+      <div class="field">
+        <label>Tipo de Equipo</label>
+        <select id="ing-equipo">
+          <option value="">— Seleccionar —</option>
+          <option>Soldadora Inverter</option>
+          <option>Monopatín Eléctrico</option>
+          <option>Máquina Gym</option>
+          <option>Cinta de Correr</option>
+          <option>Máquina Eléctrica</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Marca / Modelo</label>
+        <input type="text" id="ing-modelo" placeholder="Ej: Lincoln Electric 200A">
+      </div>
+      <div class="field">
+        <label>Falla Declarada</label>
+        <textarea id="ing-falla" placeholder="Descripción del problema según el cliente..."></textarea>
+      </div>
+      <div class="field">
+        <label>Error Declarado</label>
+        <input type="text" id="ing-error" placeholder="Código de error o descripción">
+      </div>
+    </div>
+  </div>
+
+  <!-- RECEPCION -->
+  <div class="card">
+    <div class="card-title">📦 Recepción</div>
+    <div class="card-body">
+      <div class="field">
+        <label>Recibida vía Encomienda</label>
+        <div class="toggle-group">
+          <button class="toggle-btn active-no" id="enc-no" onclick="toggleEncomienda(false)">NO</button>
+          <button class="toggle-btn" id="enc-si" onclick="toggleEncomienda(true)">SÍ</button>
+        </div>
+      </div>
+      <div class="encomienda-extra" id="encomienda-extra">
+        <div class="field">
+          <label>Correo / Transporte</label>
+          <select id="ing-correo">
+            <option value="">— Seleccionar —</option>
+            <option>Comisionista</option>
+            <option>Correo Argentino</option>
+            <option>OCA</option>
+            <option>Andreani</option>
+            <option>Via Cargo</option>
+            <option>Colectivo</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Código de Envío</label>
+          <input type="text" id="ing-codigo-envio" placeholder="Número de seguimiento">
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- FOTOS AL INGRESO -->
+  <div class="card">
+    <div class="card-title">📷 Fotos del Equipo</div>
+    <div class="card-body">
+      <p id="ing-foto-msg" style="font-size:12px;color:var(--text2);font-weight:700;margin-bottom:10px;">
+        Guardá primero el ingreso para poder subir fotos.
+      </p>
+      <div id="ing-fotos-wrap" style="display:none;">
+        <div class="field">
+          <label>Categoría</label>
+          <select id="ing-foto-cat" class="estado-select" style="border-color:var(--border);">
+            <option value="ingreso">📥 Al Ingreso</option>
+            <option value="diagnostico">🔬 Diagnóstico</option>
+            <option value="reparacion">🔧 Durante Reparación</option>
+            <option value="terminado">✅ Terminado</option>
+          </select>
+        </div>
+        <div id="ing-foto-drop" style="
+          border:2px dashed var(--border);border-radius:var(--radius);
+          padding:16px;text-align:center;margin:8px 0;cursor:pointer;"
+          onclick="document.getElementById('ing-foto-file').click()">
+          <div style="font-size:28px;">📷</div>
+          <div style="font-size:13px;font-weight:900;color:var(--text2);">Tocá para elegir foto</div>
+        </div>
+        <input type="file" id="ing-foto-file" accept="image/*" multiple style="display:none"
+          onchange="handleFotoIngreso(this.files)">
+        <div id="ing-foto-preview" style="display:flex;flex-wrap:wrap;gap:8px;margin:8px 0;"></div>
+        <div id="ing-foto-status" style="font-size:12px;font-weight:900;color:var(--text2);text-align:center;min-height:18px;"></div>
+        <button class="btn btn-primary" id="ing-btn-subir" onclick="subirFotosIngreso()" style="display:none;margin-top:8px;">
+          ☁️ SUBIR FOTOS
+        </button>
+        <div id="ing-fotos-guardadas" style="margin-top:8px;"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="actions">
+    <button class="btn btn-secondary" onclick="vistaPrevia()">👁 VISTA PREVIA</button>
+    <button class="btn btn-primary" onclick="guardarIngreso()">💾 GUARDAR</button>
+  </div>
+</div>
+
+<!-- ==================== OT TALLER ==================== -->
+<div id="panel-ott" class="panel">
+
+  <div class="numero-box">
+    <div class="num" id="num-ott">OTT-00001</div>
+    <div class="fecha" id="fecha-ott">--/--/---- --:--</div>
+  </div>
+
+  <!-- BUSCAR INGRESO -->
+  <div class="card">
+    <div class="card-title">🔍 Vincular Ingreso</div>
+    <div class="card-body">
+      <div class="field">
+        <label>N° de Ingreso</label>
+        <div style="display:flex;gap:8px;">
+          <input type="text" id="ott-num-ingreso" placeholder="ING-00001" style="flex:1">
+          <button class="btn btn-secondary" style="flex:0;padding:8px 14px;font-size:13px;" onclick="buscarIngreso()">BUSCAR</button>
+        </div>
+      </div>
+      <div id="ott-ingreso-ok" style="display:none;color:var(--success);font-size:12px;font-weight:900;margin-top:6px;">✅ Datos cargados automáticamente</div>
+    </div>
+  </div>
+
+  <!-- CLIENTE -->
+  <div class="card">
+    <div class="card-title">👤 Cliente</div>
+    <div class="card-body">
+      <div class="field">
+        <label>Cliente / Razón Social</label>
+        <input type="text" id="ott-cliente" placeholder="Nombre o empresa">
+      </div>
+      <div class="row">
+        <div class="field">
+          <label>CUIT / DNI</label>
+          <input type="text" id="ott-cuit" placeholder="XX-XXXXXXXX-X">
+        </div>
+        <div class="field">
+          <label>Teléfono</label>
+          <input type="tel" id="ott-tel" placeholder="299XXXXXXX">
+        </div>
+      </div>
+      <div class="field">
+        <label>Dirección</label>
+        <input type="text" id="ott-direccion" placeholder="Calle y número">
+      </div>
+      <div class="row">
+        <div class="field">
+          <label>CP</label>
+          <input type="text" id="ott-cp" placeholder="8300">
+        </div>
+        <div class="field">
+          <label>Ciudad</label>
+          <input type="text" id="ott-ciudad" placeholder="Neuquén">
+        </div>
+        <div class="field">
+          <label>Provincia</label>
+          <input type="text" id="ott-provincia" placeholder="Neuquén">
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- EQUIPO -->
+  <div class="card">
+    <div class="card-title">🔧 Equipo</div>
+    <div class="card-body">
+      <div class="field">
+        <label>Tipo de Equipo</label>
+        <select id="ott-equipo">
+          <option value="">— Seleccionar —</option>
+          <option>Soldadora Inverter</option>
+          <option>Monopatín Eléctrico</option>
+          <option>Máquina Gym</option>
+          <option>Cinta de Correr</option>
+          <option>Máquina Eléctrica</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Marca / Modelo</label>
+        <input type="text" id="ott-modelo" placeholder="Ej: Lincoln Electric 200A">
+      </div>
+      <div class="field">
+        <label>Falla Declarada</label>
+        <textarea id="ott-falla" placeholder="Descripción del problema según el cliente..."></textarea>
+      </div>
+      <div class="field">
+        <label>Error Declarado</label>
+        <input type="text" id="ott-error" placeholder="Código de error o descripción">
+      </div>
+    </div>
+  </div>
+
+  <!-- DIAGNÓSTICO -->
+  <div class="card">
+    <div class="card-title">🔬 Diagnóstico y Trabajo</div>
+    <div class="card-body">
+      <div class="field">
+        <label>Diagnóstico</label>
+        <textarea id="ott-diagnostico" placeholder="Resultado del diagnóstico técnico..."></textarea>
+      </div>
+      <div class="field">
+        <label>Trabajo a Realizar</label>
+        <textarea id="ott-trabajo" placeholder="Detalle del trabajo que se realizará..."></textarea>
+      </div>
+    </div>
+  </div>
+
+  <!-- PRESUPUESTO -->
+  <div class="card">
+    <div class="card-title">💰 Presupuesto</div>
+    <div class="card-body">
+      <div class="row">
+        <div class="field">
+          <label>Presupuesto Total $</label>
+          <input type="number" id="ott-total" placeholder="0.00" oninput="calcularSaldo()">
+        </div>
+        <div class="field">
+          <label>Adelanto %</label>
+          <input type="number" id="ott-adelanto-pct" placeholder="50" oninput="calcularSaldo()">
+        </div>
+      </div>
+      <div class="row">
+        <div class="field">
+          <label>Adelanto $</label>
+          <input type="number" id="ott-adelanto-monto" placeholder="0.00" style="color:var(--success)" oninput="calcularSaldoManual()">
+        </div>
+        <div class="field">
+          <label>Saldo Contraentrega $</label>
+          <input type="number" id="ott-saldo" placeholder="0.00" style="color:var(--accent)" readonly>
+        </div>
+      </div>
+      <div class="row">
+        <div class="field">
+          <label>Garantía</label>
+          <input type="text" id="ott-garantia" placeholder="Ej: 90 días sobre trabajo">
+        </div>
+        <div class="field">
+          <label>Tiempo Estimado</label>
+          <input type="text" id="ott-tiempo" placeholder="Ej: 5 días hábiles">
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ENCOMIENDA -->
+  <div class="card">
+    <div class="card-title">📦 Encomienda Recibida</div>
+    <div class="card-body">
+      <div class="field">
+        <label>Recibida vía Encomienda</label>
+        <div class="toggle-group">
+          <button class="toggle-btn active-no" id="ott-enc-no" onclick="toggleEncomiendaOTT(false)">NO</button>
+          <button class="toggle-btn" id="ott-enc-si" onclick="toggleEncomiendaOTT(true)">SÍ</button>
+        </div>
+      </div>
+      <div class="encomienda-extra" id="ott-encomienda-extra">
+        <div class="field">
+          <label>Correo / Transporte</label>
+          <select id="ott-correo">
+            <option value="">— Seleccionar —</option>
+            <option>Comisionista</option>
+            <option>Correo Argentino</option>
+            <option>OCA</option>
+            <option>Andreani</option>
+            <option>Via Cargo</option>
+            <option>Colectivo</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Código de Envío</label>
+          <input type="text" id="ott-codigo-envio" placeholder="Número de seguimiento">
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- FOTOS OTT -->
+  <div class="card">
+    <div class="card-title">📷 Fotos del Equipo</div>
+    <div class="card-body">
+      <p id="ott-foto-msg" style="font-size:12px;color:var(--text2);font-weight:700;margin-bottom:10px;">
+        Guardá primero la orden para poder subir fotos.
+      </p>
+      <div id="ott-fotos-wrap" style="display:none;">
+        <div class="field">
+          <label>Categoría</label>
+          <select id="ott-foto-cat" class="estado-select" style="border-color:var(--border);">
+            <option value="ingreso">📥 Al Ingreso</option>
+            <option value="diagnostico">🔬 Diagnóstico</option>
+            <option value="reparacion">🔧 Durante Reparación</option>
+            <option value="terminado">✅ Terminado</option>
+          </select>
+        </div>
+        <div style="border:2px dashed var(--border);border-radius:var(--radius);
+          padding:16px;text-align:center;margin:8px 0;cursor:pointer;"
+          onclick="document.getElementById('ott-foto-file').click()">
+          <div style="font-size:28px;">📷</div>
+          <div style="font-size:13px;font-weight:900;color:var(--text2);">Tocá para elegir foto</div>
+        </div>
+        <input type="file" id="ott-foto-file" accept="image/*" multiple style="display:none"
+          onchange="handleFotoOrden('ott', this.files)">
+        <div id="ott-foto-preview" style="display:flex;flex-wrap:wrap;gap:8px;margin:8px 0;"></div>
+        <div id="ott-foto-status" style="font-size:12px;font-weight:900;color:var(--text2);text-align:center;min-height:18px;"></div>
+        <button class="btn btn-primary" id="ott-btn-subir" onclick="subirFotosOrden('ott')" style="display:none;margin-top:8px;">
+          ☁️ SUBIR FOTOS
+        </button>
+        <div id="ott-fotos-guardadas" style="margin-top:8px;"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="actions">
+    <button class="btn btn-secondary" onclick="vistaPreviaOTT()">👁 VISTA PREVIA</button>
+    <button class="btn btn-primary" onclick="guardarOTT()">💾 GUARDAR</button>
+  </div>
+</div>
+
+<!-- ==================== OT EXTERIOR ==================== -->
+<div id="panel-ote" class="panel">
+
+  <div class="numero-box">
+    <div class="num" id="num-ote">OTE-00001</div>
+    <div class="fecha" id="fecha-ote">--/--/---- --:--</div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">👷 Técnico</div>
+    <div class="card-body">
+      <div class="field">
+        <label>Técnico Responsable</label>
+        <input type="text" id="ote-tecnico" placeholder="Nombre del técnico" value="Mauro Ezequiel Luque">
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">👤 Cliente</div>
+    <div class="card-body">
+      <div class="field">
+        <label>Cliente / Razón Social</label>
+        <input type="text" id="ote-cliente" placeholder="Nombre o empresa">
+      </div>
+      <div class="row">
+        <div class="field">
+          <label>CUIT / DNI</label>
+          <input type="text" id="ote-cuit" placeholder="XX-XXXXXXXX-X">
+        </div>
+        <div class="field">
+          <label>Teléfono</label>
+          <input type="tel" id="ote-tel" placeholder="299XXXXXXX">
+        </div>
+      </div>
+      <div class="field">
+        <label>Dirección</label>
+        <input type="text" id="ote-direccion" placeholder="Calle y número">
+      </div>
+      <div class="row">
+        <div class="field">
+          <label>CP</label>
+          <input type="text" id="ote-cp" placeholder="8300">
+        </div>
+        <div class="field">
+          <label>Ciudad</label>
+          <input type="text" id="ote-ciudad" placeholder="Neuquén">
+        </div>
+        <div class="field">
+          <label>Provincia</label>
+          <input type="text" id="ote-provincia" placeholder="Neuquén">
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">🔧 Equipo / Servicio</div>
+    <div class="card-body">
+      <div class="field">
+        <label>Tipo de Servicio / Equipo</label>
+        <select id="ote-equipo">
+          <option value="">— Seleccionar —</option>
+          <option>Soldadora Inverter</option>
+          <option>Monopatín Eléctrico</option>
+          <option>Máquina Gym</option>
+          <option>Cinta de Correr</option>
+          <option>Máquina Eléctrica</option>
+          <option>Servicio de Urgencia</option>
+          <option>Instalaciones Eléctricas</option>
+          <option>Mantenimiento</option>
+          <option>Asesoramiento</option>
+          <option>Otro</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Marca / Modelo</label>
+        <input type="text" id="ote-modelo" placeholder="Ej: Lincoln 200A (si aplica)">
+      </div>
+      <div class="field">
+        <label>Falla / Problema Declarado</label>
+        <textarea id="ote-falla" placeholder="Descripción del problema según el cliente..."></textarea>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">📋 Trabajo</div>
+    <div class="card-body">
+      <div class="field">
+        <label>Descripción del Servicio (a realizar)</label>
+        <textarea id="ote-desc-servicio" placeholder="Trabajo planificado..."></textarea>
+      </div>
+      <div class="field">
+        <label>Trabajo Realizado</label>
+        <textarea id="ote-trabajo-realizado" placeholder="Trabajo efectivamente realizado..."></textarea>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">💰 Costo Mano de Obra y Materiales</div>
+    <div class="card-body">
+      <div class="row">
+        <div class="field">
+          <label>Mano de Obra $</label>
+          <input type="number" id="ote-mano-obra" placeholder="0.00" oninput="calcularTotalOTE()">
+        </div>
+        <div class="field">
+          <label>Viático $</label>
+          <input type="number" id="ote-viatico" placeholder="0.00" oninput="calcularTotalOTE()">
+        </div>
+      </div>
+      <div class="field">
+        <label>Materiales</label>
+        <div id="ote-materiales-lista"></div>
+        <button class="btn btn-secondary" style="margin-top:6px;font-size:12px;padding:8px;" onclick="agregarMaterial()">+ AGREGAR MATERIAL</button>
+      </div>
+      <div style="border-top:1px solid var(--border);margin:10px 0;padding-top:10px;">
+        <div class="row">
+          <div class="field">
+            <label>Total Materiales $</label>
+            <input type="number" id="ote-total-materiales" placeholder="0.00" readonly style="color:var(--accent2)">
+          </div>
+          <div class="field">
+            <label>TOTAL GENERAL $</label>
+            <input type="number" id="ote-total-general" placeholder="0.00" readonly style="color:var(--accent);font-size:17px;">
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">📊 Gastos de Viático (uso interno)</div>
+    <div class="card-body">
+      <div class="row">
+        <div class="field">
+          <label>Vianda / Comida $</label>
+          <input type="number" id="ote-vianda" placeholder="0.00" oninput="calcularGastosOTE()">
+        </div>
+        <div class="field">
+          <label>Movilidad $</label>
+          <input type="number" id="ote-movilidad" placeholder="0.00" oninput="calcularGastosOTE()">
+        </div>
+      </div>
+      <div class="row">
+        <div class="field">
+          <label>Otros Gastos $</label>
+          <input type="number" id="ote-otros-gastos" placeholder="0.00" oninput="calcularGastosOTE()">
+        </div>
+        <div class="field">
+          <label>Total Gastos $</label>
+          <input type="number" id="ote-total-gastos" placeholder="0.00" readonly style="color:var(--danger)">
+        </div>
+      </div>
+      <div class="field">
+        <label>Nota Interna</label>
+        <textarea id="ote-nota-interna" placeholder="Observaciones internas (no aparece en el PDF del cliente)..."></textarea>
+      </div>
+    </div>
+  </div>
+
+  <!-- FOTOS OTE -->
+  <div class="card">
+    <div class="card-title">📷 Fotos del Servicio</div>
+    <div class="card-body">
+      <p id="ote-foto-msg" style="font-size:12px;color:var(--text2);font-weight:700;margin-bottom:10px;">
+        Guardá primero la orden para poder subir fotos.
+      </p>
+      <div id="ote-fotos-wrap" style="display:none;">
+        <div class="field">
+          <label>Categoría</label>
+          <select id="ote-foto-cat" class="estado-select" style="border-color:var(--border);">
+            <option value="ingreso">📥 Al Ingreso</option>
+            <option value="diagnostico">🔬 Diagnóstico</option>
+            <option value="reparacion">🔧 Durante Reparación</option>
+            <option value="terminado">✅ Terminado</option>
+          </select>
+        </div>
+        <div style="border:2px dashed var(--border);border-radius:var(--radius);
+          padding:16px;text-align:center;margin:8px 0;cursor:pointer;"
+          onclick="document.getElementById('ote-foto-file').click()">
+          <div style="font-size:28px;">📷</div>
+          <div style="font-size:13px;font-weight:900;color:var(--text2);">Tocá para elegir foto</div>
+        </div>
+        <input type="file" id="ote-foto-file" accept="image/*" multiple style="display:none"
+          onchange="handleFotoOrden('ote', this.files)">
+        <div id="ote-foto-preview" style="display:flex;flex-wrap:wrap;gap:8px;margin:8px 0;"></div>
+        <div id="ote-foto-status" style="font-size:12px;font-weight:900;color:var(--text2);text-align:center;min-height:18px;"></div>
+        <button class="btn btn-primary" id="ote-btn-subir" onclick="subirFotosOrden('ote')" style="display:none;margin-top:8px;">
+          ☁️ SUBIR FOTOS
+        </button>
+        <div id="ote-fotos-guardadas" style="margin-top:8px;"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="actions">
+    <button class="btn btn-secondary" onclick="vistaPreviaOTE()">👁 VISTA PREVIA</button>
+    <button class="btn btn-primary" onclick="guardarOTE()">💾 GUARDAR</button>
+  </div>
+</div>
+
+<!-- ==================== PANEL DE CONTROL ==================== -->
+<div id="panel-panel" class="panel">
+
+  <!-- Filtros -->
+  <div style="display:flex;gap:6px;margin-bottom:12px;flex-wrap:wrap;">
+    <button class="toggle-btn" id="filtro-todos"   onclick="filtrarPanel('todos')"   style="flex:1;min-width:70px;">TODOS</button>
+    <button class="toggle-btn" id="filtro-taller"  onclick="filtrarPanel('taller')"  style="flex:1;min-width:70px;">TALLER</button>
+    <button class="toggle-btn" id="filtro-exterior" onclick="filtrarPanel('exterior')" style="flex:1;min-width:70px;">EXTERIOR</button>
+  </div>
+  <div style="display:flex;gap:6px;margin-bottom:14px;">
+    <input type="text" id="panel-buscar" placeholder="🔍 Buscar cliente o N°..."
+      style="flex:1;background:var(--surface2);border:1px solid var(--border);border-radius:4px;color:var(--text);font-family:var(--font);font-size:14px;font-weight:700;padding:9px 10px;outline:none;"
+      oninput="renderPanel()">
+  </div>
+
+  <!-- Lista de órdenes -->
+  <div id="panel-lista"></div>
+
+</div>
+
+<!-- MODAL DETALLE ORDEN -->
+<div class="modal-overlay" id="modal-detalle">
+  <div class="modal" style="max-width:460px;max-height:90vh;overflow-y:auto;">
+    <h3 id="det-titulo">DETALLE</h3>
+    <div id="det-cuerpo"></div>
+    <div class="modal-btns" id="det-acciones" style="margin-top:12px;"></div>
+    <button class="btn btn-secondary" style="margin-top:8px;" onclick="cerrarDetalle()">CERRAR</button>
+  </div>
+</div>
+
+<!-- ==================== CONTABILIDAD ==================== -->
+<div id="panel-contabilidad" class="panel">
+
+  <!-- Período -->
+  <div style="display:flex;gap:6px;margin-bottom:12px;flex-wrap:wrap;">
+    <button class="toggle-btn" id="cont-sem"  onclick="setPeriodo('semana')" >SEMANA</button>
+    <button class="toggle-btn active-si" id="cont-mes"  onclick="setPeriodo('mes')"   >MES</button>
+    <button class="toggle-btn" id="cont-anio" onclick="setPeriodo('anio')"  >AÑO</button>
+  </div>
+
+  <!-- Resumen tarjetas -->
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px;">
+    <div class="kpi-card" id="kpi-ingresos">
+      <div class="kpi-label">EQUIPOS INGRESADOS</div>
+      <div class="kpi-val" id="kpi-ing-val">—</div>
+    </div>
+    <div class="kpi-card" id="kpi-reparados">
+      <div class="kpi-label">REPARADOS</div>
+      <div class="kpi-val" id="kpi-rep-val">—</div>
+    </div>
+    <div class="kpi-card" style="border-color:var(--success);">
+      <div class="kpi-label">INGRESOS $</div>
+      <div class="kpi-val" style="color:var(--success);" id="kpi-dinero-val">—</div>
+    </div>
+    <div class="kpi-card" style="border-color:var(--danger);">
+      <div class="kpi-label">EGRESOS $</div>
+      <div class="kpi-val" style="color:var(--danger);" id="kpi-egreso-val">—</div>
+    </div>
+    <div class="kpi-card" style="border-color:var(--accent);grid-column:span 2;">
+      <div class="kpi-label">GANANCIA ESTIMADA $</div>
+      <div class="kpi-val" style="color:var(--accent);font-size:26px;" id="kpi-ganancia-val">—</div>
+    </div>
+  </div>
+
+  <!-- Desglose órdenes -->
+  <div class="card">
+    <div class="card-title">📋 Detalle de Órdenes del Período</div>
+    <div class="card-body" style="padding:0;">
+      <div id="cont-ordenes-lista" style="max-height:300px;overflow-y:auto;"></div>
+    </div>
+  </div>
+
+  <!-- Egresos manuales -->
+  <div class="card">
+    <div class="card-title">➖ Cargar Egreso</div>
+    <div class="card-body">
+      <div class="row">
+        <div class="field"><label>Concepto</label>
+          <select id="egr-concepto">
+            <option>Alquiler</option>
+            <option>Servicios (luz/gas/internet)</option>
+            <option>Materiales / Stock</option>
+            <option>Herramientas</option>
+            <option>Movilidad</option>
+            <option>Impuestos / Monotributo</option>
+            <option>Otro</option>
+          </select>
+        </div>
+        <div class="field"><label>Monto $</label>
+          <input type="number" id="egr-monto" placeholder="0.00">
+        </div>
+      </div>
+      <div class="row">
+        <div class="field"><label>Descripción</label>
+          <input type="text" id="egr-desc" placeholder="Detalle del gasto...">
+        </div>
+        <div class="field"><label>Fecha</label>
+          <input type="date" id="egr-fecha">
+        </div>
+      </div>
+      <div class="field"><label>Comprobante / N° boleta</label>
+        <input type="text" id="egr-boleta" placeholder="N° de factura o boleta">
+      </div>
+
+      <!-- Foto de la factura/boleta -->
+      <div class="field">
+        <label>📷 Foto de Factura / Boleta</label>
+        <div style="border:2px dashed var(--border);border-radius:var(--radius);
+          padding:14px;text-align:center;cursor:pointer;margin-top:4px;"
+          onclick="document.getElementById('egr-foto-file').click()">
+          <div style="font-size:26px;">🧾</div>
+          <div style="font-size:12px;font-weight:900;color:var(--text2);">Tocá para sacar/elegir foto</div>
+        </div>
+        <input type="file" id="egr-foto-file" accept="image/*" capture="environment"
+          style="display:none" onchange="handleFotoEgreso(this.files)">
+        <div id="egr-foto-preview" style="display:flex;flex-wrap:wrap;gap:8px;margin-top:8px;"></div>
+      </div>
+
+      <button class="btn btn-primary" style="margin-top:8px;" onclick="guardarEgreso()">+ CARGAR EGRESO</button>
+    </div>
+  </div>
+
+  <!-- Alquileres -->
+  <div class="card">
+    <div class="card-title">🏠 Alquileres y Vencimientos</div>
+    <div class="card-body">
+      <div id="alquileres-lista"></div>
+      <button class="btn btn-secondary" style="margin-top:8px;font-size:12px;padding:8px;" onclick="agregarAlquiler()">+ AGREGAR ALQUILER</button>
+    </div>
+  </div>
+
+  <!-- Stock de componentes -->
+  <div class="card">
+    <div class="card-title">📦 Stock de Componentes</div>
+    <div class="card-body">
+      <div id="stock-lista" style="margin-bottom:10px;max-height:200px;overflow-y:auto;"></div>
+      <div class="row">
+        <div class="field"><label>Componente</label>
+          <input type="text" id="stock-nombre" placeholder="Nombre del componente"></div>
+        <div class="field"><label>Cantidad</label>
+          <input type="number" id="stock-cant" placeholder="0"></div>
+        <div class="field"><label>Costo unit. $</label>
+          <input type="number" id="stock-costo" placeholder="0.00"></div>
+      </div>
+      <button class="btn btn-primary" style="margin-top:8px;" onclick="agregarStock()">+ AGREGAR AL STOCK</button>
+    </div>
+  </div>
+
+</div>
+
+<!-- ==================== CONFIGURACIONES ==================== -->
+<div id="panel-config" class="panel">
+
+  <!-- Datos de la empresa -->
+  <div class="card">
+    <div class="card-title">🏢 Datos de la Empresa</div>
+    <div class="card-body">
+      <div class="field"><label>Nombre / Razón Social</label>
+        <input type="text" id="cfg-nombre" placeholder="ELECTROMEL"></div>
+      <div class="field"><label>Subtítulo</label>
+        <input type="text" id="cfg-sub" placeholder="Servicio Técnico..."></div>
+      <div class="row">
+        <div class="field"><label>CUIT</label>
+          <input type="text" id="cfg-cuit"></div>
+        <div class="field"><label>IIBB</label>
+          <input type="text" id="cfg-iibb"></div>
+      </div>
+      <div class="field"><label>Domicilio</label>
+        <input type="text" id="cfg-domicilio"></div>
+      <div class="row">
+        <div class="field"><label>Ciudad</label>
+          <input type="text" id="cfg-ciudad"></div>
+        <div class="field"><label>Provincia</label>
+          <input type="text" id="cfg-provincia"></div>
+      </div>
+      <div class="row">
+        <div class="field"><label>Teléfono</label>
+          <input type="tel" id="cfg-tel"></div>
+        <div class="field"><label>Email</label>
+          <input type="email" id="cfg-email"></div>
+      </div>
+      <div class="field"><label>Condición IVA</label>
+        <input type="text" id="cfg-iva" placeholder="Responsable MONOTRIBUTO"></div>
+    </div>
+  </div>
+
+  <!-- Técnico -->
+  <div class="card">
+    <div class="card-title">👷 Técnico</div>
+    <div class="card-body">
+      <div class="row">
+        <div class="field"><label>Nombre completo</label>
+          <input type="text" id="cfg-tecnico"></div>
+        <div class="field"><label>Título</label>
+          <input type="text" id="cfg-titulo"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Datos bancarios -->
+  <div class="card">
+    <div class="card-title">💳 Datos Bancarios</div>
+    <div class="card-body">
+      <div class="row">
+        <div class="field"><label>Banco</label>
+          <input type="text" id="cfg-banco" placeholder="Banco Brubank"></div>
+        <div class="field"><label>Alias</label>
+          <input type="text" id="cfg-alias" placeholder="electromel"></div>
+      </div>
+      <div class="field"><label>CBU (opcional)</label>
+        <input type="text" id="cfg-cbu" placeholder="CBU o CVU"></div>
+    </div>
+  </div>
+
+  <!-- Leyenda legal -->
+  <div class="card">
+    <div class="card-title">⚖️ Leyenda Legal (pie de PDF)</div>
+    <div class="card-body">
+      <div class="field">
+        <textarea id="cfg-leyenda" style="min-height:80px;"></textarea>
+      </div>
+    </div>
+  </div>
+
+  <!-- Mensajes WhatsApp -->
+  <div class="card">
+    <div class="card-title">📲 Mensajes WhatsApp por Estado</div>
+    <div class="card-body">
+      <p style="font-size:11px;color:var(--text2);margin-bottom:10px;font-weight:700;">
+        Variables disponibles: {cliente} {equipo} {numero} {total} {guia}
+      </p>
+      <div id="cfg-wa-lista"></div>
+    </div>
+  </div>
+
+  <!-- Google Drive -->
+  <div class="card">
+    <div class="card-title">☁️ Google Drive (Fotos)</div>
+    <div class="card-body">
+      <p style="font-size:12px;color:var(--text2);font-weight:700;margin-bottom:10px;">
+        Configurá tu API Key para subir fotos de los equipos directamente a tu Drive.
+        Las fotos se organizan en carpetas por número de orden.
+      </p>
+      <div class="field"><label>Google API Key</label>
+        <input type="text" id="cfg-drive-key" placeholder="AIzaSy..."></div>
+      <div class="field"><label>Client ID de OAuth 2.0</label>
+        <input type="text" id="cfg-drive-clientid" placeholder="XXXXXXX.apps.googleusercontent.com"></div>
+      <div class="field"><label>ID de Carpeta Raíz en Drive</label>
+        <input type="text" id="cfg-drive-folder" placeholder="ID de la carpeta ELECTROMEL en Drive">
+        <div style="font-size:10px;color:var(--text2);margin-top:4px;font-weight:700;">
+          💡 El ID está en la URL de Drive: drive.google.com/drive/folders/<b>ESTE-ID</b>
+        </div>
+      </div>
+      <div id="drive-estado" style="margin-top:10px;font-size:12px;font-weight:900;color:var(--text2);">
+        Estado: No configurado
+      </div>
+      <div class="actions" style="margin-top:10px;padding-bottom:0;">
+        <button class="btn btn-secondary" onclick="testDriveConexion()">🔗 PROBAR CONEXIÓN</button>
+        <button class="btn btn-primary" onclick="guardarConfigDrive()">💾 GUARDAR</button>
+      </div>
+      <div style="margin-top:12px;padding:10px;background:var(--surface2);border-radius:var(--radius);font-size:11px;color:var(--text2);font-weight:700;line-height:1.6;">
+        <b style="color:var(--accent);">📋 Cómo obtener las credenciales:</b><br>
+        1. Ir a console.cloud.google.com<br>
+        2. Crear proyecto → Activar "Google Drive API"<br>
+        3. Crear credenciales: API Key + OAuth 2.0 Client ID<br>
+        4. En OAuth agregar tu dominio como origen autorizado<br>
+        5. Crear carpeta "ELECTROMEL" en Drive y copiar su ID
+      </div>
+    </div>
+  </div>
+
+  <!-- Backup -->
+  <div class="card">
+    <div class="card-title">💾 Backup de Datos</div>
+    <div class="card-body">
+      <p style="font-size:12px;color:var(--text2);font-weight:700;margin-bottom:12px;">
+        Exportá todos tus datos a un archivo JSON para hacer backup. Si cambiás de teléfono o se borra el caché, podés restaurar todo.
+      </p>
+      <div class="actions" style="padding-bottom:0;margin-bottom:10px;">
+        <button class="btn btn-success" onclick="exportarBackup()">⬇️ EXPORTAR BACKUP</button>
+        <button class="btn btn-secondary" onclick="document.getElementById('backup-import-file').click()">⬆️ IMPORTAR BACKUP</button>
+      </div>
+      <input type="file" id="backup-import-file" accept=".json" style="display:none"
+        onchange="importarBackup(this)">
+      <div id="backup-status" style="font-size:12px;font-weight:900;color:var(--text2);text-align:center;min-height:18px;margin-top:6px;"></div>
+    </div>
+  </div>
+
+  <div class="actions">
+    <button class="btn btn-secondary" onclick="resetConfigWA()">↺ RESETEAR WA</button>
+    <button class="btn btn-primary" onclick="guardarConfig()">💾 GUARDAR CONFIG</button>
+  </div>
+</div>
+
+<!-- MODAL POST-GUARDAR -->
+<div class="modal-overlay" id="modal-guardado">
+  <div class="modal">
+    <h3>✅ INGRESO GUARDADO</h3>
+    <p style="text-align:center; color:var(--text2); font-size:12px;" id="modal-num-texto"></p>
+    <div class="modal-btns">
+      <button class="btn btn-primary" onclick="imprimirPDFA4()">🖨️ IMPRIMIR PDF A4</button>
+      <button class="btn btn-secondary" onclick="imprimirTicket()">🧾 IMPRIMIR TICKET 57mm</button>
+      <button class="btn btn-secondary" onclick="imprimirEtiqueta()">🏷️ IMPRIMIR ETIQUETA</button>
+      <button class="btn btn-secondary" onclick="cerrarModal()">CERRAR</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL OTE -->
+<div class="modal-overlay" id="modal-ote">
+  <div class="modal">
+    <h3>✅ OT EXTERIOR GUARDADA</h3>
+    <p style="text-align:center;color:var(--text2);font-size:12px;" id="modal-ote-texto"></p>
+    <div class="modal-btns">
+      <button class="btn btn-primary" onclick="imprimirPDFOTE()">🖨️ IMPRIMIR PDF A4</button>
+      <button class="btn btn-secondary" onclick="cerrarModalOTE()">CERRAR</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL OTT -->
+<div class="modal-overlay" id="modal-ott">
+  <div class="modal">
+    <h3>✅ OT TALLER GUARDADA</h3>
+    <p style="text-align:center;color:var(--text2);font-size:12px;" id="modal-ott-texto"></p>
+    <div class="modal-btns">
+      <button class="btn btn-primary" onclick="imprimirPDFOTT()">🖨️ IMPRIMIR PDF A4</button>
+      <button class="btn btn-whatsapp" onclick="enviarWhatsAppOTT()">📲 ENVIAR POR WHATSAPP</button>
+      <button class="btn btn-secondary" onclick="cerrarModalOTT()">CERRAR</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL VISOR FOTO BOLETA -->
+<div class="modal-overlay" id="modal-visor-foto" onclick="cerrarVisorFoto()">
+  <div style="max-width:95vw;max-height:90vh;display:flex;flex-direction:column;align-items:center;gap:10px;">
+    <img id="visor-foto-img" src="" alt="boleta"
+      style="max-width:100%;max-height:80vh;border-radius:8px;object-fit:contain;">
+    <button class="btn btn-secondary" style="min-width:120px;" onclick="cerrarVisorFoto()">CERRAR</button>
+  </div>
+</div>
+
+<!-- MODAL BÚSQUEDA RÁPIDA -->
+<div class="modal-overlay" id="modal-busqueda">
+  <div class="modal" style="max-width:460px;">
+    <h3>🔍 BUSCAR CLIENTE</h3>
+    <input type="text" id="busqueda-input" placeholder="Nombre, teléfono, N° de orden..."
+      style="width:100%;background:var(--surface2);border:1px solid var(--accent);border-radius:4px;
+      color:var(--text);font-family:var(--font);font-size:15px;font-weight:900;padding:10px;
+      box-sizing:border-box;margin-bottom:10px;"
+      oninput="buscarRapido(this.value)">
+    <div id="busqueda-resultados" style="max-height:300px;overflow-y:auto;border:1px solid var(--border);border-radius:4px;"></div>
+    <div class="modal-btns" style="margin-top:12px;">
+      <button class="btn btn-secondary" onclick="cerrarBusqueda()">CERRAR</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL FOTOS -->
+<div class="modal-overlay" id="modal-fotos">
+  <div class="modal" style="max-width:460px;max-height:92vh;overflow-y:auto;">
+    <h3 id="fotos-titulo">📷 FOTOS</h3>
+    <p style="text-align:center;font-size:11px;color:var(--text2);margin-bottom:12px;" id="fotos-subtitulo"></p>
+
+    <!-- Selector categoría + input file -->
+    <div class="field">
+      <label>Categoría</label>
+      <select id="foto-categoria" class="estado-select" style="border-color:var(--border);">
+        <option value="ingreso">📥 Al Ingreso</option>
+        <option value="diagnostico">🔬 Diagnóstico</option>
+        <option value="reparacion">🔧 Durante Reparación</option>
+        <option value="terminado">✅ Terminado</option>
+      </select>
+    </div>
+
+    <!-- Área de subida -->
+    <div id="foto-drop-area" style="
+      border:2px dashed var(--border);border-radius:var(--radius);
+      padding:20px;text-align:center;margin:10px 0;cursor:pointer;
+      transition:border-color 0.2s;"
+      onclick="document.getElementById('foto-file-input').click()"
+      ondragover="event.preventDefault();this.style.borderColor='var(--accent)'"
+      ondragleave="this.style.borderColor='var(--border)'"
+      ondrop="handleDrop(event)">
+      <div style="font-size:32px;margin-bottom:8px;">📷</div>
+      <div style="font-size:13px;font-weight:900;color:var(--text2);">Tocá para elegir foto</div>
+      <div style="font-size:11px;color:var(--text2);margin-top:4px;">o arrastrá desde el explorador</div>
+    </div>
+    <input type="file" id="foto-file-input" accept="image/*" multiple style="display:none"
+      onchange="handleFotoSeleccionada(this.files)">
+
+    <!-- Preview de fotos a subir -->
+    <div id="foto-preview-lista" style="display:flex;flex-wrap:wrap;gap:8px;margin:8px 0;"></div>
+
+    <!-- Estado subida -->
+    <div id="foto-upload-status" style="font-size:12px;font-weight:900;color:var(--text2);min-height:20px;text-align:center;"></div>
+
+    <!-- Fotos guardadas por categoría -->
+    <div id="fotos-guardadas"></div>
+
+    <div class="modal-btns" style="margin-top:12px;">
+      <button class="btn btn-primary" id="btn-subir-fotos" onclick="subirFotos()" style="display:none;">
+        ☁️ SUBIR A DRIVE
+      </button>
+      <button class="btn btn-secondary" onclick="cerrarFotos()">CERRAR</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ==================== CONFIG DATOS EMPRESA ====================
+const EMPRESA = {
+  nombre: "ELECTROMEL",
+  sub: "Servicio Técnico especializado soldadoras inverter",
+  tecnico: "Mauro Ezequiel Luque",
+  titulo: "Técnico Electromecánico",
+  cuit: "20-34121390-9",
+  iibb: "20341213909-05",
+  domicilio: "Anaya 140",
+  ciudad: "Neuquén, Neuquén",
+  tel: "2994116753",
+  email: "electromelnqn@gmail.com",
+  iva: "Responsable MONOTRIBUTO",
+  banco: "Banco Brubank",
+  alias: "electromel",
+  leyendaGarantia: "Los trabajos cuentan con garantía sobre el trabajo realizado. Pasados 30 días sin retirar el equipo se cobrará un recargo en concepto de almacenamiento. Pasados 120 días se considera abandono del equipo."
+};
+
+// ==================== INDEXEDDB (reemplazado por versión OTT abajo) ====================
+let db;
+
+function getConfig(key, def, cb) {
+  const tx = db.transaction("config", "readonly");
+  const req = tx.objectStore("config").get(key);
+  req.onsuccess = e => cb(e.target.result ? e.target.result.value : def);
+}
+
+function setConfig(key, value) {
+  const tx = db.transaction("config", "readwrite");
+  tx.objectStore("config").put({ key, value });
+}
+
+function getNextIngreso(cb) {
+  getConfig("nextING", 1, n => cb(n));
+}
+
+function incrementIngreso() {
+  getConfig("nextING", 1, n => setConfig("nextING", n + 1));
+}
+
+function formatNum(n) {
+  return String(n).padStart(5, "0");
+}
+
+function cargarNumeroIngreso() {
+  getNextIngreso(n => {
+    document.getElementById("num-ingreso").textContent = "ING-" + formatNum(n);
+  });
+}
+
+// ==================== RELOJ ====================
+function actualizarFecha() {
+  const now = new Date();
+  const fecha = now.toLocaleDateString("es-AR");
+  const hora = now.toLocaleTimeString("es-AR", { hour: "2-digit", minute: "2-digit", hour12: false });
+
+  const ht = document.getElementById("header-time");
+  const hd = document.getElementById("header-date");
+  if (ht) ht.textContent = hora;
+  if (hd) hd.textContent = fecha;
+
+  const fi = document.getElementById("fecha-ingreso");
+  if (fi) fi.textContent = fecha + "  " + hora;
+
+  const fo = document.getElementById("fecha-ott");
+  if (fo) fo.textContent = fecha + "  " + hora;
+
+  const fe = document.getElementById("fecha-ote");
+  if (fe) fe.textContent = fecha + "  " + hora;
+}
+setInterval(actualizarFecha, 1000);
+actualizarFecha();
+
+// ==================== TABS ====================
+function showTab(name) {
+  document.querySelectorAll(".panel").forEach(p => p.classList.remove("active"));
+  document.querySelectorAll(".tab").forEach(t => t.classList.remove("active"));
+  document.getElementById("panel-" + name).classList.add("active");
+  event.target.classList.add("active");
+  if (name === "panel") {
+    filtrarPanel(panelFiltro || "todos");
+    cargarPanel();
+  }
+  if (name === "config") { cargarConfig(); cargarConfigDrive(); }
+  if (name === "contabilidad") { calcularContabilidad(); cargarAlquileres(); cargarStock(); }
+}
+
+// ==================== ENCOMIENDA TOGGLE ====================
+let encomiendaSi = false;
+
+function toggleEncomienda(si) {
+  encomiendaSi = si;
+  document.getElementById("enc-no").className = "toggle-btn" + (!si ? " active-no" : "");
+  document.getElementById("enc-si").className = "toggle-btn" + (si ? " active-si" : "");
+  document.getElementById("encomienda-extra").className = "encomienda-extra" + (si ? " show" : "");
+}
+
+// ==================== LEER FORMULARIO ====================
+function leerFormIngreso() {
+  return {
+    cliente: document.getElementById("ing-cliente").value.trim(),
+    cuit: document.getElementById("ing-cuit").value.trim(),
+    tel: document.getElementById("ing-tel").value.trim(),
+    direccion: document.getElementById("ing-direccion").value.trim(),
+    cp: document.getElementById("ing-cp").value.trim(),
+    ciudad: document.getElementById("ing-ciudad").value.trim(),
+    provincia: document.getElementById("ing-provincia").value.trim(),
+    equipo: document.getElementById("ing-equipo").value,
+    modelo: document.getElementById("ing-modelo").value.trim(),
+    falla: document.getElementById("ing-falla").value.trim(),
+    error: document.getElementById("ing-error").value.trim(),
+    encomienda: encomiendaSi,
+    correo: document.getElementById("ing-correo").value,
+    codigoEnvio: document.getElementById("ing-codigo-envio").value.trim(),
+  };
+}
+
+// ==================== TOAST ====================
+function showToast(msg) {
+  const t = document.getElementById("toast");
+  t.textContent = msg;
+  t.classList.add("show");
+  setTimeout(() => t.classList.remove("show"), 2500);
+}
+
+// ==================== GUARDAR INGRESO ====================
+let ultimoIngreso = null;
+
+function guardarIngreso() {
+  const data = leerFormIngreso();
+  if (!data.cliente) { showToast("⚠️ Ingresá el nombre del cliente"); return; }
+  if (!data.equipo) { showToast("⚠️ Seleccioná el tipo de equipo"); return; }
+
+  getNextIngreso(n => {
+    const numero = "ING-" + formatNum(n);
+    const fecha = new Date();
+    const registro = {
+      numero,
+      fechaISO: fecha.toISOString(),
+      fechaStr: fecha.toLocaleDateString("es-AR"),
+      horaStr: fecha.toLocaleTimeString("es-AR", { hour: "2-digit", minute: "2-digit" }),
+      estado: "ingresado",
+      ...data
+    };
+
+    const tx = db.transaction("ingresos", "readwrite");
+    const req = tx.objectStore("ingresos").add(registro);
+    req.onsuccess = () => {
+      incrementIngreso();
+      ultimoIngreso = registro;
+      document.getElementById("modal-num-texto").textContent = numero + " — " + registro.fechaStr;
+      document.getElementById("modal-guardado").classList.add("show");
+      cargarNumeroIngreso();
+    };
+    req.onerror = () => showToast("❌ Error al guardar");
+  });
+}
+
+function vistaPrevia() {
+  const data = leerFormIngreso();
+  if (!data.cliente) { showToast("⚠️ Completá al menos el cliente"); return; }
+  // Usar datos actuales sin guardar
+  getNextIngreso(n => {
+    const fecha = new Date();
+    ultimoIngreso = {
+      numero: "ING-" + formatNum(n),
+      fechaStr: fecha.toLocaleDateString("es-AR"),
+      horaStr: fecha.toLocaleTimeString("es-AR", { hour: "2-digit", minute: "2-digit" }),
+      ...data
+    };
+    document.getElementById("modal-num-texto").textContent = "VISTA PREVIA — " + ultimoIngreso.numero;
+    document.getElementById("modal-guardado").classList.add("show");
+  });
+}
+
+function cerrarModal() {
+  document.getElementById("modal-guardado").classList.remove("show");
+  resetFormIngreso();
+}
+
+// ==================== PDF A4 ====================
+function imprimirPDFA4() {
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF({ format: "a4", unit: "mm" });
+  const d = ultimoIngreso;
+  const W = 210;
+  let y = 15;
+
+  // ENCABEZADO
+  doc.setFillColor(15, 15, 15);
+  doc.rect(0, 0, W, 40, "F");
+
+  doc.setTextColor(232, 160, 32);
+  doc.setFontSize(28);
+  doc.setFont("helvetica", "bold");
+  doc.text("ELECTROMEL", W / 2, y + 8, { align: "center" });
+
+  doc.setTextColor(180, 180, 180);
+  doc.setFontSize(10);
+  doc.setFont("helvetica", "normal");
+  doc.text(EMPRESA.sub, W / 2, y + 16, { align: "center" });
+
+  // Datos empresa
+  doc.setFontSize(8);
+  doc.setTextColor(200, 200, 200);
+  const emp1 = `CUIT: ${EMPRESA.cuit}  |  IIBB: ${EMPRESA.iibb}  |  ${EMPRESA.iva}`;
+  const emp2 = `${EMPRESA.domicilio} · ${EMPRESA.ciudad}  |  Tel: ${EMPRESA.tel}  |  ${EMPRESA.email}`;
+  doc.text(emp1, W / 2, y + 23, { align: "center" });
+  doc.text(emp2, W / 2, y + 28, { align: "center" });
+
+  y = 48;
+
+  // Línea separadora
+  doc.setDrawColor(232, 160, 32);
+  doc.setLineWidth(0.5);
+  doc.line(10, y, W - 10, y);
+
+  y += 8;
+
+  // Título del documento
+  doc.setTextColor(30, 30, 30);
+  doc.setFillColor(232, 160, 32);
+  doc.rect(10, y - 5, W - 20, 10, "F");
+  doc.setFontSize(12);
+  doc.setFont("helvetica", "bold");
+  doc.text(`RECIBO DE INGRESO  N°: ${d.numero}`, W / 2, y + 1, { align: "center" });
+
+  y += 12;
+  doc.setFontSize(10);
+  doc.setFont("helvetica", "normal");
+  doc.setTextColor(50, 50, 50);
+  doc.text(`Fecha: ${d.fechaStr}    Hora: ${d.horaStr}`, 15, y);
+
+  y += 10;
+
+  // Sección CLIENTE
+  seccionPDF(doc, "DATOS DEL CLIENTE", y);
+  y += 8;
+  doc.setFontSize(10);
+  doc.setTextColor(30, 30, 30);
+  campoPDF(doc, "Cliente / Razón Social:", d.cliente, 15, y); y += 7;
+  campoPDF(doc, "CUIT/DNI:", d.cuit, 15, y);
+  campoPDF(doc, "Teléfono:", d.tel, 110, y); y += 7;
+  campoPDF(doc, "Dirección:", d.direccion, 15, y);
+  campoPDF(doc, "CP:", d.cp, 140, y); y += 7;
+  campoPDF(doc, "Ciudad:", d.ciudad, 15, y);
+  campoPDF(doc, "Provincia:", d.provincia, 110, y); y += 12;
+
+  // Sección EQUIPO
+  seccionPDF(doc, "DATOS DEL EQUIPO", y); y += 8;
+  campoPDF(doc, "Equipo:", d.equipo, 15, y); y += 7;
+  campoPDF(doc, "Marca/Modelo:", d.modelo, 15, y); y += 7;
+  campoPDF(doc, "Falla Declarada:", d.falla, 15, y); y += 14;
+  campoPDF(doc, "Error Declarado:", d.error, 15, y); y += 12;
+
+  // Encomienda
+  if (d.encomienda) {
+    seccionPDF(doc, "DATOS DE ENCOMIENDA", y); y += 8;
+    campoPDF(doc, "Correo:", d.correo, 15, y);
+    campoPDF(doc, "Código de envío:", d.codigoEnvio, 110, y); y += 12;
+  }
+
+  // Condiciones
+  seccionPDF(doc, "CONDICIONES DEL SERVICIO", y); y += 8;
+  doc.setFontSize(8.5);
+  doc.setFont("helvetica", "normal");
+  doc.setTextColor(60, 60, 60);
+  const condiciones = [
+    "• Diagnóstico dentro de 24 a 48 hs hábiles.",
+    "• Presupuesto a confirmar antes de iniciar la reparación.",
+    "• El plazo de reparación se informa luego del diagnóstico.",
+    "• El diagnóstico podrá tener costo si no se aprueba la reparación.",
+    "• La garantía aplica únicamente sobre el trabajo realizado.",
+  ];
+  condiciones.forEach(c => { doc.text(c, 15, y); y += 6; });
+
+  y += 4;
+
+  // Firma
+  doc.setDrawColor(100);
+  doc.setLineWidth(0.3);
+  doc.line(15, y + 8, 90, y + 8);
+  doc.line(120, y + 8, 195, y + 8);
+  doc.setFontSize(8);
+  doc.setTextColor(100);
+  doc.text("Firma cliente", 15, y + 13);
+  doc.text("Aclaración", 120, y + 13);
+  doc.setFontSize(7); doc.setTextColor(120);
+  doc.text(`${EMPRESA.tecnico} — ${EMPRESA.titulo}`, W / 2, y + 20, { align: "center" });
+
+  y += 22;
+  doc.line(15, y + 8, 90, y + 8);
+  doc.setFontSize(8);
+  doc.text("Fecha: ________________________", 15, y + 13);
+
+  // PIE DE PÁGINA
+  const pieY = 277;
+  doc.setDrawColor(232, 160, 32);
+  doc.line(10, pieY - 8, W - 10, pieY - 8);
+  doc.setFontSize(7);
+  doc.setTextColor(100);
+  doc.text(EMPRESA.leyendaGarantia, W / 2, pieY - 4, { align: "center", maxWidth: W - 20 });
+  doc.setFontSize(9);
+  doc.setFont("helvetica", "bold");
+  doc.setTextColor(232, 160, 32);
+  doc.text("GRACIAS POR CONFIAR EN ELECTROMEL", W / 2, pieY + 2, { align: "center" });
+
+  doc.save(`Ingreso-${d.numero}.pdf`);
+  cerrarModal();
+  showToast("✅ PDF generado");
+}
+
+function seccionPDF(doc, titulo, y) {
+  doc.setFillColor(240, 240, 240);
+  doc.rect(10, y - 4, 190, 7, "F");
+  doc.setFontSize(9);
+  doc.setFont("helvetica", "bold");
+  doc.setTextColor(50, 50, 50);
+  doc.text(titulo, 13, y + 1);
+}
+
+function campoPDF(doc, label, valor, x, y) {
+  doc.setFontSize(9);
+  doc.setFont("helvetica", "bold");
+  doc.setTextColor(80, 80, 80);
+  doc.text(label, x, y);
+  doc.setFont("helvetica", "normal");
+  doc.setTextColor(20, 20, 20);
+  doc.text(valor || "—", x + doc.getTextWidth(label) + 2, y);
+}
+
+// ==================== TICKET 57x220mm ====================
+function imprimirTicket() {
+  const d = ultimoIngreso;
+  const W_MM = 57, H_MM = 220;
+  const DPI = 203; // Resolución típica impresora térmica
+  const W_PX = Math.round(W_MM * DPI / 25.4);
+  const H_PX = Math.round(H_MM * DPI / 25.4);
+
+  const canvas = document.createElement("canvas");
+  canvas.width = W_PX;
+  canvas.height = H_PX;
+  const ctx = canvas.getContext("2d");
+
+  // Fondo blanco
+  ctx.fillStyle = "#fff";
+  ctx.fillRect(0, 0, W_PX, H_PX);
+
+  ctx.fillStyle = "#000";
+  let y = 0;
+
+  function drawText(text, size, bold, align = "left", x = null) {
+    ctx.font = `${bold ? "bold" : "normal"} ${size}px 'Courier New', monospace`;
+    const textX = align === "center" ? W_PX / 2 : (x ?? 10);
+    ctx.textAlign = align === "center" ? "center" : "left";
+    ctx.fillText(text, textX, y);
+    y += size * 1.3;
+  }
+
+  function drawLine() {
+    ctx.fillRect(0, y, W_PX, 2);
+    y += 8;
+  }
+
+  function drawDashes() {
+    ctx.font = "bold 18px Courier New";
+    ctx.textAlign = "center";
+    ctx.fillText("- - - - - - - - - - - - -", W_PX / 2, y);
+    y += 26;
+  }
+
+  y = 30;
+
+  // Encabezado
+  drawText("ELECTROMEL", 34, true, "center");
+  drawText("Servicio Técnico", 20, false, "center");
+  drawText("Soldadoras Inverter", 20, false, "center");
+  y += 6;
+  drawLine();
+
+  drawText(`CUIT: ${EMPRESA.cuit}`, 17, false, "center");
+  drawText(`IIBB: ${EMPRESA.iibb}`, 17, false, "center");
+  drawText(EMPRESA.domicilio, 17, false, "center");
+  drawText(`Tel: ${EMPRESA.tel}`, 17, false, "center");
+  drawText(EMPRESA.email, 15, false, "center");
+  y += 4;
+  drawLine();
+
+  drawText("RECIBO DE INGRESO", 22, true, "center");
+  drawText(`N°: ${d.numero}`, 26, true, "center");
+  drawText(`Fecha: ${d.fechaStr}`, 18, false, "center");
+  drawText(`Hora: ${d.horaStr}`, 18, false, "center");
+  y += 4;
+  drawLine();
+
+  drawText("CLIENTE", 20, true, "center");
+  y += 4;
+  drawText(`Cliente: ${d.cliente}`, 18, true);
+  if (d.cuit) drawText(`CUIT/DNI: ${d.cuit}`, 17, false);
+  if (d.tel) drawText(`Tel: ${d.tel}`, 17, false);
+  if (d.direccion) drawText(`Dir: ${d.direccion}`, 17, false);
+  if (d.ciudad) drawText(`${d.ciudad} ${d.cp}`, 17, false);
+  if (d.provincia) drawText(`Prov: ${d.provincia}`, 17, false);
+  y += 4;
+  drawLine();
+
+  drawText("EQUIPO", 20, true, "center");
+  y += 4;
+  drawText(`Equipo: ${d.equipo}`, 18, true);
+  if (d.modelo) drawText(`Marca/Modelo: ${d.modelo}`, 17, false);
+  if (d.falla) {
+    drawText("Falla declarada:", 17, true);
+    // Wrap texto largo
+    const words = d.falla.split(" ");
+    let line = "";
+    ctx.font = "normal 17px Courier New";
+    for (const w of words) {
+      const test = line + w + " ";
+      if (ctx.measureText(test).width > W_PX - 20 && line) {
+        ctx.textAlign = "left";
+        ctx.fillText(line.trim(), 10, y);
+        y += 22;
+        line = w + " ";
+      } else { line = test; }
+    }
+    if (line.trim()) { ctx.textAlign = "left"; ctx.fillText(line.trim(), 10, y); y += 22; }
+  }
+  if (d.error) drawText(`Error: ${d.error}`, 17, false);
+  y += 4;
+  drawLine();
+
+  drawText("CONDICIONES DEL SERVICIO", 17, true, "center");
+  y += 4;
+  const conds = [
+    "- Diagnóstico: 24 a 48 hs hábiles",
+    "- Presupuesto previo a reparación",
+    "- Garantía sobre trabajo realizado",
+    "- Retirar en 30 días o se cobra",
+    "  almacenamiento",
+    "- Pasados 120 días: abandono",
+  ];
+  conds.forEach(c => drawText(c, 16, false));
+  y += 6;
+  drawLine();
+
+  drawText("Firma cliente:", 20, true);
+  y += 50;
+  ctx.fillRect(10, y, W_PX - 20, 2);
+  y += 10;
+  drawText("Aclaración:", 20, true);
+  y += 40;
+  ctx.fillRect(10, y, W_PX - 20, 2);
+  y += 10;
+  drawText("Fecha:", 20, true);
+  y += 40;
+  ctx.fillRect(10, y, W_PX - 20, 2);
+  y += 20;
+  drawLine();
+
+  drawText("GRACIAS POR CONFIAR", 19, true, "center");
+  drawText("EN ELECTROMEL 😊", 19, true, "center");
+
+  // Generar descarga
+  const link = document.createElement("a");
+  link.download = `Ticket-${d.numero}.png`;
+  link.href = canvas.toDataURL("image/png");
+  link.click();
+  showToast("✅ Ticket generado");
+}
+
+// ==================== ETIQUETA 55x30mm ====================
+function imprimirEtiqueta() {
+  const d = ultimoIngreso;
+  const W_MM = 55, H_MM = 30;
+  const DPI = 203;
+  const W_PX = Math.round(W_MM * DPI / 25.4);
+  const H_PX = Math.round(H_MM * DPI / 25.4);
+
+  // Armar número WA del cliente
+  const telLimpio = (d.tel || "").replace(/\D/g, "");
+  const waURL = telLimpio
+    ? `https://wa.me/549${telLimpio}`
+    : `https://wa.me/549${EMPRESA.tel}`;
+
+  // Generar QR en un div oculto
+  const qrDiv = document.createElement("div");
+  qrDiv.style.cssText = "position:absolute;left:-9999px;top:-9999px;";
+  document.body.appendChild(qrDiv);
+
+  const qrSize = H_PX - 20; // tamaño del QR en px
+
+  new QRCode(qrDiv, {
+    text: waURL,
+    width:  qrSize,
+    height: qrSize,
+    colorDark:  "#000000",
+    colorLight: "#ffffff",
+    correctLevel: QRCode.CorrectLevel.M,
+  });
+
+  // Esperar que se renderice el QR (es síncrono con QRCode.js)
+  setTimeout(() => {
+    const qrImg = qrDiv.querySelector("img") || qrDiv.querySelector("canvas");
+
+    const canvas = document.createElement("canvas");
+    canvas.width  = W_PX;
+    canvas.height = H_PX;
+    const ctx = canvas.getContext("2d");
+
+    // Fondo blanco
+    ctx.fillStyle = "#fff";
+    ctx.fillRect(0, 0, W_PX, H_PX);
+    ctx.fillStyle = "#000";
+
+    // Borde
+    ctx.strokeStyle = "#000";
+    ctx.lineWidth = 4;
+    ctx.strokeRect(2, 2, W_PX - 4, H_PX - 4);
+
+    // Área de texto — dejar espacio a la derecha para el QR
+    const qrX   = W_PX - qrSize - 8;
+    const txtW  = qrX - 14;
+
+    let y = 20;
+    function dt(text, size, bold, maxW) {
+      ctx.font = `${bold ? "bold" : "normal"} ${size}px 'Courier New', monospace`;
+      ctx.textAlign = "left";
+      // Truncar si es muy largo
+      let t = text;
+      while (ctx.measureText(t).width > (maxW || txtW) && t.length > 3) {
+        t = t.slice(0, -1);
+      }
+      ctx.fillText(t, 10, y);
+      y += size * 1.3;
+    }
+
+    dt("ELECTROMEL",        20, true);
+    dt(d.numero,            17, true);
+    dt(d.cliente || "—",    15, true);
+    if (d.tel) dt(`Tel: ${d.tel}`, 13, false);
+    dt(d.equipo || "—",     13, true);
+    if (d.modelo) dt(d.modelo, 12, false);
+
+    // Dibujar QR
+    if (qrImg) {
+      ctx.drawImage(qrImg, qrX, 8, qrSize, qrSize);
+    }
+
+    // Etiqueta "WA" debajo del QR
+    ctx.font = "bold 11px Courier New";
+    ctx.textAlign = "center";
+    ctx.fillText("WhatsApp", qrX + qrSize / 2, 10 + qrSize + 12);
+
+    document.body.removeChild(qrDiv);
+
+    const link = document.createElement("a");
+    link.download = `Etiqueta-${d.numero}.png`;
+    link.href = canvas.toDataURL("image/png");
+    link.click();
+    showToast("✅ Etiqueta con QR generada");
+  }, 100);
+}
+
+// ==================== OTT — DB ====================
+function initDB() {
+  const req = indexedDB.open("electromelDB", 4);
+  req.onupgradeneeded = e => {
+    const d = e.target.result;
+    if (!d.objectStoreNames.contains("ingresos")) {
+      const s = d.createObjectStore("ingresos", { keyPath: "id", autoIncrement: true });
+      s.createIndex("numero", "numero", { unique: true });
+    }
+    if (!d.objectStoreNames.contains("ordenes")) {
+      const o = d.createObjectStore("ordenes", { keyPath: "id", autoIncrement: true });
+      o.createIndex("numero", "numero", { unique: true });
+    }
+    if (!d.objectStoreNames.contains("exteriors")) {
+      const x = d.createObjectStore("exteriors", { keyPath: "id", autoIncrement: true });
+      x.createIndex("numero", "numero", { unique: true });
+    }
+    if (!d.objectStoreNames.contains("egresos")) {
+      d.createObjectStore("egresos", { keyPath: "id", autoIncrement: true });
+    }
+    if (!d.objectStoreNames.contains("config")) {
+      d.createObjectStore("config", { keyPath: "key" });
+    }
+  };
+  req.onsuccess = e => {
+    db = e.target.result;
+    cargarNumeroIngreso();
+    cargarNumeroOTT();
+    cargarNumeroOTE();
+    filtrarPanel("todos");
+    // Cargar config guardada al iniciar
+    cargarConfigEnMemoria();
+  };
+  req.onerror = () => console.error("Error abriendo DB");
+}
+
+function getNextOTT(cb) { getConfig("nextOTT", 1, n => cb(n)); }
+function incrementOTT() { getConfig("nextOTT", 1, n => setConfig("nextOTT", n + 1)); }
+
+function cargarNumeroOTT() {
+  getNextOTT(n => {
+    const el = document.getElementById("num-ott");
+    if (el) el.textContent = "OTT-" + formatNum(n);
+  });
+}
+
+// ==================== OTT — ENCOMIENDA ====================
+let ottEncomiendaSi = false;
+
+function toggleEncomiendaOTT(si) {
+  ottEncomiendaSi = si;
+  document.getElementById("ott-enc-no").className = "toggle-btn" + (!si ? " active-no" : "");
+  document.getElementById("ott-enc-si").className = "toggle-btn" + (si ? " active-si" : "");
+  document.getElementById("ott-encomienda-extra").className = "encomienda-extra" + (si ? " show" : "");
+}
+
+// ==================== OTT — BUSCAR INGRESO ====================
+function buscarIngreso() {
+  const num = document.getElementById("ott-num-ingreso").value.trim().toUpperCase();
+  if (!num) { showToast("⚠️ Ingresá un número de ingreso"); return; }
+
+  const tx = db.transaction("ingresos", "readonly");
+  const idx = tx.objectStore("ingresos").index("numero");
+  const req = idx.get(num);
+  req.onsuccess = e => {
+    const r = e.target.result;
+    if (!r) { showToast("❌ Ingreso no encontrado"); return; }
+    // Rellenar campos automáticamente
+    document.getElementById("ott-cliente").value   = r.cliente || "";
+    document.getElementById("ott-cuit").value      = r.cuit || "";
+    document.getElementById("ott-tel").value       = r.tel || "";
+    document.getElementById("ott-direccion").value = r.direccion || "";
+    document.getElementById("ott-cp").value        = r.cp || "";
+    document.getElementById("ott-ciudad").value    = r.ciudad || "";
+    document.getElementById("ott-provincia").value = r.provincia || "";
+    document.getElementById("ott-equipo").value    = r.equipo || "";
+    document.getElementById("ott-modelo").value    = r.modelo || "";
+    document.getElementById("ott-falla").value     = r.falla || "";
+    document.getElementById("ott-error").value     = r.error || "";
+    document.getElementById("ott-ingreso-ok").style.display = "block";
+    showToast("✅ Ingreso " + num + " cargado");
+  };
+  req.onerror = () => showToast("❌ Error buscando ingreso");
+}
+
+// ==================== OTT — CÁLCULO SALDO ====================
+function calcularSaldo() {
+  const total = parseFloat(document.getElementById("ott-total").value) || 0;
+  const pct   = parseFloat(document.getElementById("ott-adelanto-pct").value) || 0;
+  const monto = total * pct / 100;
+  document.getElementById("ott-adelanto-monto").value = monto.toFixed(2);
+  document.getElementById("ott-saldo").value = (total - monto).toFixed(2);
+}
+
+function calcularSaldoManual() {
+  const total = parseFloat(document.getElementById("ott-total").value) || 0;
+  const monto = parseFloat(document.getElementById("ott-adelanto-monto").value) || 0;
+  document.getElementById("ott-saldo").value = (total - monto).toFixed(2);
+  if (total > 0) {
+    document.getElementById("ott-adelanto-pct").value = ((monto / total) * 100).toFixed(0);
+  }
+}
+
+// ==================== OTT — LEER FORM ====================
+function leerFormOTT() {
+  return {
+    numIngreso:    document.getElementById("ott-num-ingreso").value.trim().toUpperCase(),
+    cliente:       document.getElementById("ott-cliente").value.trim(),
+    cuit:          document.getElementById("ott-cuit").value.trim(),
+    tel:           document.getElementById("ott-tel").value.trim(),
+    direccion:     document.getElementById("ott-direccion").value.trim(),
+    cp:            document.getElementById("ott-cp").value.trim(),
+    ciudad:        document.getElementById("ott-ciudad").value.trim(),
+    provincia:     document.getElementById("ott-provincia").value.trim(),
+    equipo:        document.getElementById("ott-equipo").value,
+    modelo:        document.getElementById("ott-modelo").value.trim(),
+    falla:         document.getElementById("ott-falla").value.trim(),
+    error:         document.getElementById("ott-error").value.trim(),
+    diagnostico:   document.getElementById("ott-diagnostico").value.trim(),
+    trabajo:       document.getElementById("ott-trabajo").value.trim(),
+    total:         document.getElementById("ott-total").value.trim(),
+    adelantoPct:   document.getElementById("ott-adelanto-pct").value.trim(),
+    adelantoMonto: document.getElementById("ott-adelanto-monto").value.trim(),
+    saldo:         document.getElementById("ott-saldo").value.trim(),
+    garantia:      document.getElementById("ott-garantia").value.trim(),
+    tiempo:        document.getElementById("ott-tiempo").value.trim(),
+    encomienda:    ottEncomiendaSi,
+    correo:        document.getElementById("ott-correo").value,
+    codigoEnvio:   document.getElementById("ott-codigo-envio").value.trim(),
+  };
+}
+
+// ==================== OTT — GUARDAR ====================
+let ultimoOTT = null;
+
+function guardarOTT() {
+  const data = leerFormOTT();
+  if (!data.cliente) { showToast("⚠️ Ingresá el cliente"); return; }
+  if (!data.equipo)  { showToast("⚠️ Seleccioná el equipo"); return; }
+
+  getNextOTT(n => {
+    const numero = "OTT-" + formatNum(n);
+    const fecha  = new Date();
+    const registro = {
+      numero,
+      fechaISO: fecha.toISOString(),
+      fechaStr: fecha.toLocaleDateString("es-AR"),
+      horaStr:  fecha.toLocaleTimeString("es-AR", { hour: "2-digit", minute: "2-digit", hour12: false }),
+      estado: "pendiente_aprobacion",
+      ...data
+    };
+
+    const tx  = db.transaction("ordenes", "readwrite");
+    const req = tx.objectStore("ordenes").add(registro);
+    req.onsuccess = () => {
+      incrementOTT();
+      ultimoOTT = registro;
+      document.getElementById("modal-ott-texto").textContent = numero + " — " + registro.fechaStr;
+      document.getElementById("modal-ott").classList.add("show");
+      cargarNumeroOTT();
+    };
+    req.onerror = () => showToast("❌ Error al guardar OTT");
+  });
+}
+
+function vistaPreviaOTT() {
+  const data = leerFormOTT();
+  if (!data.cliente) { showToast("⚠️ Completá al menos el cliente"); return; }
+  getNextOTT(n => {
+    const fecha = new Date();
+    ultimoOTT = {
+      numero:   "OTT-" + formatNum(n),
+      fechaStr: fecha.toLocaleDateString("es-AR"),
+      horaStr:  fecha.toLocaleTimeString("es-AR", { hour: "2-digit", minute: "2-digit", hour12: false }),
+      ...data
+    };
+    document.getElementById("modal-ott-texto").textContent = "VISTA PREVIA — " + ultimoOTT.numero;
+    document.getElementById("modal-ott").classList.add("show");
+  });
+}
+
+function cerrarModalOTT() {
+  document.getElementById("modal-ott").classList.remove("show");
+  resetFormOTT();
+}
+function resetFormOTT() {
+  ["ott-num-ingreso","ott-cliente","ott-cuit","ott-tel","ott-direccion",
+   "ott-cp","ott-ciudad","ott-provincia","ott-equipo","ott-modelo",
+   "ott-falla","ott-error","ott-diagnostico","ott-trabajo","ott-total",
+   "ott-adelanto-pct","ott-adelanto-monto","ott-saldo","ott-garantia",
+   "ott-tiempo","ott-correo","ott-codigo-envio"]
+    .forEach(id => { const el = document.getElementById(id); if(el) el.value=""; });
+  toggleEncomiendaOTT(false);
+  document.getElementById("ott-ingreso-ok").style.display = "none";
+  // Reset fotos
+  ordenFotosCtx.ott.fotos = []; ordenFotosCtx.ott.id = null;
+  const wrap = document.getElementById("ott-fotos-wrap");
+  const msg  = document.getElementById("ott-foto-msg");
+  if (wrap) wrap.style.display = "none";
+  if (msg)  msg.style.display  = "block";
+  document.getElementById("ott-foto-preview").innerHTML = "";
+  document.getElementById("ott-fotos-guardadas").innerHTML = "";
+  document.getElementById("ott-btn-subir").style.display = "none";
+}
+
+// ==================== OTT — PDF A4 ====================
+function imprimirPDFOTT() {
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF({ format: "a4", unit: "mm" });
+  const d = ultimoOTT;
+  const W = 210;
+  let y = 15;
+
+  // Encabezado negro
+  doc.setFillColor(15, 15, 15);
+  doc.rect(0, 0, W, 40, "F");
+  doc.setTextColor(232, 160, 32);
+  doc.setFontSize(28); doc.setFont("helvetica", "bold");
+  doc.text("ELECTROMEL", W / 2, y + 8, { align: "center" });
+  doc.setTextColor(180, 180, 180);
+  doc.setFontSize(10); doc.setFont("helvetica", "normal");
+  doc.text(EMPRESA.sub, W / 2, y + 16, { align: "center" });
+  doc.setFontSize(8); doc.setTextColor(200, 200, 200);
+  doc.text(`CUIT: ${EMPRESA.cuit}  |  IIBB: ${EMPRESA.iibb}  |  ${EMPRESA.iva}`, W / 2, y + 23, { align: "center" });
+  doc.text(`${EMPRESA.domicilio} · ${EMPRESA.ciudad}  |  Tel: ${EMPRESA.tel}  |  ${EMPRESA.email}`, W / 2, y + 28, { align: "center" });
+  y = 48;
+
+  doc.setDrawColor(232, 160, 32); doc.setLineWidth(0.5);
+  doc.line(10, y, W - 10, y); y += 8;
+
+  // Título OT
+  doc.setFillColor(232, 160, 32);
+  doc.rect(10, y - 5, W - 20, 10, "F");
+  doc.setFontSize(12); doc.setFont("helvetica", "bold"); doc.setTextColor(30, 30, 30);
+  doc.text(`ORDEN DE TRABAJO TALLER  N°: ${d.numero}`, W / 2, y + 1, { align: "center" });
+  y += 12;
+  doc.setFontSize(10); doc.setFont("helvetica", "normal"); doc.setTextColor(50, 50, 50);
+  doc.text(`Fecha: ${d.fechaStr}    Hora: ${d.horaStr}`, 15, y);
+  if (d.numIngreso) doc.text(`Ingreso vinculado: ${d.numIngreso}`, 120, y);
+  y += 10;
+
+  // Cliente
+  seccionPDF(doc, "DATOS DEL CLIENTE", y); y += 8;
+  campoPDF(doc, "Cliente:", d.cliente, 15, y);
+  campoPDF(doc, "Tel:", d.tel, 120, y); y += 7;
+  campoPDF(doc, "CUIT/DNI:", d.cuit, 15, y); y += 7;
+  campoPDF(doc, "Dirección:", d.direccion, 15, y);
+  campoPDF(doc, "CP:", d.cp, 150, y); y += 7;
+  campoPDF(doc, "Ciudad:", d.ciudad, 15, y);
+  campoPDF(doc, "Provincia:", d.provincia, 110, y); y += 10;
+
+  // Equipo
+  seccionPDF(doc, "DATOS DEL EQUIPO", y); y += 8;
+  campoPDF(doc, "Equipo:", d.equipo, 15, y); y += 7;
+  campoPDF(doc, "Marca/Modelo:", d.modelo, 15, y); y += 7;
+  campoPDF(doc, "Falla declarada:", d.falla, 15, y); y += 7;
+  campoPDF(doc, "Error declarado:", d.error, 15, y); y += 10;
+
+  // Diagnóstico
+  seccionPDF(doc, "DIAGNÓSTICO Y TRABAJO", y); y += 8;
+  doc.setFontSize(9); doc.setFont("helvetica", "bold"); doc.setTextColor(80,80,80);
+  doc.text("Diagnóstico:", 15, y); y += 5;
+  doc.setFont("helvetica", "normal"); doc.setTextColor(20,20,20);
+  const diagLines = doc.splitTextToSize(d.diagnostico || "—", 180);
+  doc.text(diagLines, 15, y); y += diagLines.length * 5 + 4;
+  doc.setFont("helvetica", "bold"); doc.setTextColor(80,80,80);
+  doc.text("Trabajo a realizar:", 15, y); y += 5;
+  doc.setFont("helvetica", "normal"); doc.setTextColor(20,20,20);
+  const trabajoLines = doc.splitTextToSize(d.trabajo || "—", 180);
+  doc.text(trabajoLines, 15, y); y += trabajoLines.length * 5 + 8;
+
+  // Presupuesto
+  seccionPDF(doc, "PRESUPUESTO", y); y += 8;
+  campoPDF(doc, "Total:", `$${d.total || "0"}`, 15, y);
+  campoPDF(doc, "Adelanto:", `$${d.adelantoMonto || "0"} (${d.adelantoPct || "0"}%)`, 80, y);
+  campoPDF(doc, "Saldo:", `$${d.saldo || "0"}`, 160, y); y += 7;
+  campoPDF(doc, "Garantía:", d.garantia, 15, y);
+  campoPDF(doc, "Tiempo estimado:", d.tiempo, 110, y); y += 10;
+
+  // Datos bancarios
+  seccionPDF(doc, "DATOS DE PAGO", y); y += 8;
+  doc.setFontSize(9); doc.setFont("helvetica", "normal"); doc.setTextColor(20,20,20);
+  doc.text(`${EMPRESA.banco}  —  Alias: ${EMPRESA.alias}`, 15, y); y += 12;
+
+  // Firmas
+  doc.setDrawColor(100); doc.setLineWidth(0.3);
+  doc.line(15, y + 8, 90, y + 8);
+  doc.line(120, y + 8, 195, y + 8);
+  doc.setFontSize(8); doc.setTextColor(100);
+  doc.text("Firma cliente", 15, y + 13);
+  doc.text("Firma técnico", 120, y + 13);
+  doc.setFontSize(7); doc.setTextColor(120);
+  doc.text(`${EMPRESA.tecnico} — ${EMPRESA.titulo}`, 120, y + 19);
+
+  // Pie
+  const pieY = 277;
+  doc.setDrawColor(232, 160, 32);
+  doc.line(10, pieY - 8, W - 10, pieY - 8);
+  doc.setFontSize(7); doc.setTextColor(100);
+  doc.text(EMPRESA.leyendaGarantia, W / 2, pieY - 4, { align: "center", maxWidth: W - 20 });
+  doc.setFontSize(9); doc.setFont("helvetica", "bold"); doc.setTextColor(232, 160, 32);
+  doc.text("GRACIAS POR CONFIAR EN ELECTROMEL", W / 2, pieY + 2, { align: "center" });
+
+  doc.save(`OTT-${d.numero}.pdf`);
+  cerrarModalOTT();
+  showToast("✅ PDF OTT generado");
+}
+
+// ==================== OTT — WHATSAPP ====================
+function enviarWhatsAppOTT() {
+  const d = ultimoOTT;
+  if (!d || !d.tel) { showToast("⚠️ Sin número de teléfono"); return; }
+  const tel = d.tel.replace(/\D/g, "");
+  const texto = encodeURIComponent(
+    `Hola ${d.cliente}, te enviamos la Orden de Trabajo N° *${d.numero}*.\n\n` +
+    `🔧 Equipo: ${d.equipo} ${d.modelo}\n` +
+    `🔬 Diagnóstico: ${d.diagnostico}\n` +
+    `💰 Presupuesto: $${d.total}\n` +
+    `💳 Adelanto: $${d.adelantoMonto} | Saldo: $${d.saldo}\n` +
+    `🛡️ Garantía: ${d.garantia}\n` +
+    `⏱️ Tiempo estimado: ${d.tiempo}\n\n` +
+    `Para transferir → ${EMPRESA.banco} · Alias: *${EMPRESA.alias}*\n\n` +
+    `Gracias por confiar en ELECTROMEL ⚡`
+  );
+  window.open(`https://wa.me/549${tel}?text=${texto}`, "_blank");
+  cerrarModalOTT();
+}
+
+// ==================== OTE — MATERIALES ====================
+let oteMateriales = [];
+
+function agregarMaterial() {
+  const idx = oteMateriales.length;
+  oteMateriales.push({ desc: "", precio: 0 });
+  renderMateriales();
+}
+
+function renderMateriales() {
+  const lista = document.getElementById("ote-materiales-lista");
+  if (!lista) return;
+  lista.innerHTML = "";
+  oteMateriales.forEach((m, i) => {
+    const div = document.createElement("div");
+    div.style.cssText = "display:flex;gap:6px;margin-bottom:6px;align-items:center;";
+    div.innerHTML = `
+      <input type="text" placeholder="Descripción" value="${m.desc}"
+        style="flex:2;background:var(--surface2);border:1px solid var(--border);border-radius:4px;color:var(--text);font-family:var(--font);font-size:14px;font-weight:700;padding:8px;"
+        oninput="oteMateriales[${i}].desc=this.value">
+      <input type="number" placeholder="$" value="${m.precio || ""}"
+        style="flex:1;background:var(--surface2);border:1px solid var(--border);border-radius:4px;color:var(--accent);font-family:var(--font);font-size:14px;font-weight:700;padding:8px;"
+        oninput="oteMateriales[${i}].precio=parseFloat(this.value)||0;calcularTotalOTE()">
+      <button onclick="quitarMaterial(${i})"
+        style="background:var(--danger);border:none;border-radius:4px;color:#fff;font-weight:900;font-size:14px;padding:8px 10px;cursor:pointer;">✕</button>
+    `;
+    lista.appendChild(div);
+  });
+  calcularTotalOTE();
+}
+
+function quitarMaterial(i) {
+  oteMateriales.splice(i, 1);
+  renderMateriales();
+}
+
+function calcularTotalOTE() {
+  const mano   = parseFloat(document.getElementById("ote-mano-obra").value) || 0;
+  const viatico = parseFloat(document.getElementById("ote-viatico").value) || 0;
+  const totalMat = oteMateriales.reduce((s, m) => s + (m.precio || 0), 0);
+  document.getElementById("ote-total-materiales").value = totalMat.toFixed(2);
+  document.getElementById("ote-total-general").value = (mano + viatico + totalMat).toFixed(2);
+}
+
+function calcularGastosOTE() {
+  const vianda   = parseFloat(document.getElementById("ote-vianda").value) || 0;
+  const movil    = parseFloat(document.getElementById("ote-movilidad").value) || 0;
+  const otros    = parseFloat(document.getElementById("ote-otros-gastos").value) || 0;
+  document.getElementById("ote-total-gastos").value = (vianda + movil + otros).toFixed(2);
+}
+
+// ==================== OTE — DB ====================
+function getNextOTE(cb) { getConfig("nextOTE", 1, n => cb(n)); }
+function incrementOTE() { getConfig("nextOTE", 1, n => setConfig("nextOTE", n + 1)); }
+
+function cargarNumeroOTE() {
+  getNextOTE(n => {
+    const el = document.getElementById("num-ote");
+    if (el) el.textContent = "OTE-" + formatNum(n);
+  });
+}
+
+// ==================== OTE — LEER FORM ====================
+function leerFormOTE() {
+  return {
+    tecnico:         document.getElementById("ote-tecnico").value.trim(),
+    cliente:         document.getElementById("ote-cliente").value.trim(),
+    cuit:            document.getElementById("ote-cuit").value.trim(),
+    tel:             document.getElementById("ote-tel").value.trim(),
+    direccion:       document.getElementById("ote-direccion").value.trim(),
+    cp:              document.getElementById("ote-cp").value.trim(),
+    ciudad:          document.getElementById("ote-ciudad").value.trim(),
+    provincia:       document.getElementById("ote-provincia").value.trim(),
+    equipo:          document.getElementById("ote-equipo").value,
+    modelo:          document.getElementById("ote-modelo").value.trim(),
+    falla:           document.getElementById("ote-falla").value.trim(),
+    descServicio:    document.getElementById("ote-desc-servicio").value.trim(),
+    trabajoRealizado:document.getElementById("ote-trabajo-realizado").value.trim(),
+    manoObra:        document.getElementById("ote-mano-obra").value.trim(),
+    viatico:         document.getElementById("ote-viatico").value.trim(),
+    materiales:      JSON.parse(JSON.stringify(oteMateriales)),
+    totalMateriales: document.getElementById("ote-total-materiales").value,
+    totalGeneral:    document.getElementById("ote-total-general").value,
+    vianda:          document.getElementById("ote-vianda").value.trim(),
+    movilidad:       document.getElementById("ote-movilidad").value.trim(),
+    otrosGastos:     document.getElementById("ote-otros-gastos").value.trim(),
+    totalGastos:     document.getElementById("ote-total-gastos").value,
+    notaInterna:     document.getElementById("ote-nota-interna").value.trim(),
+  };
+}
+
+// ==================== OTE — GUARDAR ====================
+let ultimoOTE = null;
+
+function guardarOTE() {
+  const data = leerFormOTE();
+  if (!data.cliente) { showToast("⚠️ Ingresá el cliente"); return; }
+  if (!data.equipo)  { showToast("⚠️ Seleccioná el servicio/equipo"); return; }
+
+  getNextOTE(n => {
+    const numero = "OTE-" + formatNum(n);
+    const fecha  = new Date();
+    const registro = {
+      numero,
+      fechaISO: fecha.toISOString(),
+      fechaStr: fecha.toLocaleDateString("es-AR"),
+      horaStr:  fecha.toLocaleTimeString("es-AR", { hour: "2-digit", minute: "2-digit", hour12: false }),
+      estado: "pendiente_pago",
+      ...data
+    };
+    const tx  = db.transaction("exteriors", "readwrite");
+    const req = tx.objectStore("exteriors").add(registro);
+    req.onsuccess = (ev) => {
+      incrementOTE();
+      ultimoOTE = registro;
+      document.getElementById("modal-ote-texto").textContent = numero + " — " + registro.fechaStr;
+      document.getElementById("modal-ote").classList.add("show");
+      cargarNumeroOTE();
+      habilitarFotosOrden("ote", ev.target.result, numero);
+    };
+    req.onerror = () => showToast("❌ Error al guardar OTE");
+  });
+}
+
+function vistaPreviaOTE() {
+  const data = leerFormOTE();
+  if (!data.cliente) { showToast("⚠️ Completá al menos el cliente"); return; }
+  getNextOTE(n => {
+    const fecha = new Date();
+    ultimoOTE = {
+      numero:   "OTE-" + formatNum(n),
+      fechaStr: fecha.toLocaleDateString("es-AR"),
+      horaStr:  fecha.toLocaleTimeString("es-AR", { hour: "2-digit", minute: "2-digit", hour12: false }),
+      ...data
+    };
+    document.getElementById("modal-ote-texto").textContent = "VISTA PREVIA — " + ultimoOTE.numero;
+    document.getElementById("modal-ote").classList.add("show");
+  });
+}
+
+function cerrarModalOTE() {
+  document.getElementById("modal-ote").classList.remove("show");
+  resetFormOTE();
+}
+function resetFormOTE() {
+  ["ote-tecnico","ote-cliente","ote-cuit","ote-tel","ote-direccion",
+   "ote-cp","ote-ciudad","ote-provincia","ote-equipo","ote-modelo",
+   "ote-falla","ote-desc-servicio","ote-trabajo-realizado","ote-mano-obra",
+   "ote-viatico","ote-total-materiales","ote-total-general","ote-vianda",
+   "ote-movilidad","ote-otros-gastos","ote-total-gastos","ote-nota-interna"]
+    .forEach(id => { const el = document.getElementById(id); if(el) el.value=""; });
+  document.getElementById("ote-tecnico").value = EMPRESA.tecnico;
+  oteMateriales = []; renderMateriales();
+  // Reset fotos
+  ordenFotosCtx.ote.fotos = []; ordenFotosCtx.ote.id = null;
+  const wrap = document.getElementById("ote-fotos-wrap");
+  const msg  = document.getElementById("ote-foto-msg");
+  if (wrap) wrap.style.display = "none";
+  if (msg)  msg.style.display  = "block";
+  document.getElementById("ote-foto-preview").innerHTML = "";
+  document.getElementById("ote-fotos-guardadas").innerHTML = "";
+  document.getElementById("ote-btn-subir").style.display = "none";
+}
+
+// ==================== OTE — PDF A4 ====================
+function imprimirPDFOTE() {
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF({ format: "a4", unit: "mm" });
+  const d = ultimoOTE;
+  const W = 210;
+  let y = 15;
+
+  // Encabezado
+  doc.setFillColor(15, 15, 15);
+  doc.rect(0, 0, W, 40, "F");
+  doc.setTextColor(232, 160, 32);
+  doc.setFontSize(28); doc.setFont("helvetica", "bold");
+  doc.text("ELECTROMEL", W / 2, y + 8, { align: "center" });
+  doc.setTextColor(180, 180, 180);
+  doc.setFontSize(10); doc.setFont("helvetica", "normal");
+  doc.text(EMPRESA.sub, W / 2, y + 16, { align: "center" });
+  doc.setFontSize(8); doc.setTextColor(200, 200, 200);
+  doc.text(`CUIT: ${EMPRESA.cuit}  |  IIBB: ${EMPRESA.iibb}  |  ${EMPRESA.iva}`, W / 2, y + 23, { align: "center" });
+  doc.text(`${EMPRESA.domicilio} · ${EMPRESA.ciudad}  |  Tel: ${EMPRESA.tel}  |  ${EMPRESA.email}`, W / 2, y + 28, { align: "center" });
+  y = 48;
+
+  doc.setDrawColor(232, 160, 32); doc.setLineWidth(0.5);
+  doc.line(10, y, W - 10, y); y += 8;
+
+  // Título
+  doc.setFillColor(232, 160, 32);
+  doc.rect(10, y - 5, W - 20, 10, "F");
+  doc.setFontSize(12); doc.setFont("helvetica", "bold"); doc.setTextColor(30, 30, 30);
+  doc.text(`ORDEN DE TRABAJO EXTERIOR  N°: ${d.numero}`, W / 2, y + 1, { align: "center" });
+  y += 12;
+  doc.setFontSize(10); doc.setFont("helvetica", "normal"); doc.setTextColor(50, 50, 50);
+  doc.text(`Fecha: ${d.fechaStr}    Hora: ${d.horaStr}    Técnico: ${d.tecnico}`, 15, y);
+  y += 10;
+
+  // Cliente
+  seccionPDF(doc, "DATOS DEL CLIENTE", y); y += 8;
+  campoPDF(doc, "Cliente:", d.cliente, 15, y);
+  campoPDF(doc, "Tel:", d.tel, 120, y); y += 7;
+  campoPDF(doc, "CUIT/DNI:", d.cuit, 15, y); y += 7;
+  campoPDF(doc, "Dirección:", d.direccion, 15, y);
+  campoPDF(doc, "CP:", d.cp, 150, y); y += 7;
+  campoPDF(doc, "Ciudad:", d.ciudad, 15, y);
+  campoPDF(doc, "Provincia:", d.provincia, 110, y); y += 10;
+
+  // Equipo
+  seccionPDF(doc, "SERVICIO / EQUIPO", y); y += 8;
+  campoPDF(doc, "Tipo:", d.equipo, 15, y); y += 7;
+  if (d.modelo) { campoPDF(doc, "Marca/Modelo:", d.modelo, 15, y); y += 7; }
+  if (d.falla) {
+    doc.setFontSize(9); doc.setFont("helvetica", "bold"); doc.setTextColor(80,80,80);
+    doc.text("Problema declarado:", 15, y); y += 5;
+    doc.setFont("helvetica", "normal"); doc.setTextColor(20,20,20);
+    const fl = doc.splitTextToSize(d.falla, 180);
+    doc.text(fl, 15, y); y += fl.length * 5 + 4;
+  }
+
+  // Trabajo
+  seccionPDF(doc, "TRABAJO", y); y += 8;
+  if (d.descServicio) {
+    doc.setFontSize(9); doc.setFont("helvetica", "bold"); doc.setTextColor(80,80,80);
+    doc.text("Descripción del servicio:", 15, y); y += 5;
+    doc.setFont("helvetica", "normal"); doc.setTextColor(20,20,20);
+    const dl = doc.splitTextToSize(d.descServicio, 180);
+    doc.text(dl, 15, y); y += dl.length * 5 + 4;
+  }
+  if (d.trabajoRealizado) {
+    doc.setFontSize(9); doc.setFont("helvetica", "bold"); doc.setTextColor(80,80,80);
+    doc.text("Trabajo realizado:", 15, y); y += 5;
+    doc.setFont("helvetica", "normal"); doc.setTextColor(20,20,20);
+    const tl = doc.splitTextToSize(d.trabajoRealizado, 180);
+    doc.text(tl, 15, y); y += tl.length * 5 + 6;
+  }
+
+  // Costos
+  seccionPDF(doc, "COSTOS", y); y += 8;
+  doc.setFontSize(9); doc.setFont("helvetica", "normal"); doc.setTextColor(20,20,20);
+  campoPDF(doc, "Mano de obra:", `$${d.manoObra || "0"}`, 15, y);
+  campoPDF(doc, "Viático:", `$${d.viatico || "0"}`, 100, y); y += 7;
+
+  // Materiales
+  if (d.materiales && d.materiales.length > 0) {
+    doc.setFont("helvetica", "bold"); doc.setTextColor(80,80,80);
+    doc.text("Materiales:", 15, y); y += 5;
+    d.materiales.forEach(m => {
+      doc.setFont("helvetica", "normal"); doc.setTextColor(20,20,20);
+      doc.text(`  • ${m.desc}`, 15, y);
+      doc.text(`$${m.precio.toFixed(2)}`, 170, y, { align: "right" });
+      y += 5;
+    });
+    y += 2;
+  }
+
+  doc.setDrawColor(150); doc.line(15, y, 195, y); y += 5;
+  campoPDF(doc, "Total Materiales:", `$${d.totalMateriales || "0"}`, 15, y);
+  y += 7;
+
+  doc.setFillColor(232, 160, 32);
+  doc.rect(10, y - 4, W - 20, 9, "F");
+  doc.setFontSize(11); doc.setFont("helvetica", "bold"); doc.setTextColor(30,30,30);
+  doc.text(`TOTAL GENERAL: $${d.totalGeneral || "0"}`, W / 2, y + 2, { align: "center" });
+  y += 14;
+
+  // Pago
+  seccionPDF(doc, "DATOS DE PAGO", y); y += 8;
+  doc.setFontSize(9); doc.setFont("helvetica", "normal"); doc.setTextColor(20,20,20);
+  doc.text(`${EMPRESA.banco}  —  Alias: ${EMPRESA.alias}`, 15, y); y += 12;
+
+  // Firmas
+  doc.setDrawColor(100); doc.setLineWidth(0.3);
+  doc.line(15, y + 8, 90, y + 8);
+  doc.line(120, y + 8, 195, y + 8);
+  doc.setFontSize(8); doc.setTextColor(100);
+  doc.text("Firma cliente", 15, y + 13);
+  doc.text("Firma técnico", 120, y + 13);
+  doc.setFontSize(7); doc.setTextColor(120);
+  doc.text(`${EMPRESA.tecnico} — ${EMPRESA.titulo}`, 120, y + 19);
+
+  // Pie
+  const pieY = 277;
+  doc.setDrawColor(232, 160, 32);
+  doc.line(10, pieY - 8, W - 10, pieY - 8);
+  doc.setFontSize(7); doc.setTextColor(100);
+  doc.text(EMPRESA.leyendaGarantia, W / 2, pieY - 4, { align: "center", maxWidth: W - 20 });
+  doc.setFontSize(9); doc.setFont("helvetica", "bold"); doc.setTextColor(232, 160, 32);
+  doc.text("GRACIAS POR CONFIAR EN ELECTROMEL", W / 2, pieY + 2, { align: "center" });
+
+  doc.save(`OTE-${d.numero}.pdf`);
+  cerrarModalOTE();
+  showToast("✅ PDF OTE generado");
+}
+
+
+// ==================== PANEL DE CONTROL ====================
+
+const ESTADOS_TALLER = [
+  "ingresado",
+  "en_diagnostico",
+  "presupuesto_enviado",
+  "aprobado",
+  "espera_componentes",
+  "en_reparacion",
+  "reparado",
+  "listo_para_retirar",
+  "prep_envio",
+  "enviado",
+  "entregado"
+];
+
+const ESTADOS_EXTERIOR = [
+  "pendiente_pago",
+  "pendiente_saldo",
+  "pagado"
+];
+
+const LABEL_ESTADO = {
+  ingresado:           "📥 Ingresado",
+  en_diagnostico:      "🔬 En Diagnóstico",
+  presupuesto_enviado: "📄 Presupuesto Enviado",
+  aprobado:            "✅ Aprobado",
+  espera_componentes:  "⏳ Espera de Componentes",
+  en_reparacion:       "🔧 En Reparación",
+  reparado:            "✔️ Reparado",
+  listo_para_retirar:  "📦 Listo para Retirar",
+  prep_envio:          "🚚 Prep. Envío",
+  enviado:             "✈️ Enviado",
+  entregado:           "🏁 Entregado",
+  pendiente_pago:      "💳 Pendiente de Pago",
+  pendiente_saldo:     "💰 Pendiente de Saldo",
+  pagado:              "✅ Pagado"
+};
+
+// Mensajes WA por defecto (configurables)
+const WA_DEFAULT = {
+  en_diagnostico:      "Hola {cliente}, tu equipo *{equipo}* ({numero}) ingresó a diagnóstico. Te avisamos en breve. ⚡ ELECTROMEL",
+  presupuesto_enviado: "Hola {cliente}, el presupuesto de tu equipo *{equipo}* es de *${total}*. Confirmanos para proceder. ⚡ ELECTROMEL",
+  aprobado:            "Hola {cliente}, recibimos tu aprobación. En breve iniciamos la reparación de tu *{equipo}*. ⚡ ELECTROMEL",
+  espera_componentes:  "Hola {cliente}, estamos esperando componentes para tu *{equipo}* ({numero}). Te avisamos cuando lleguen. Gracias por tu paciencia. ⚡ ELECTROMEL",
+  en_reparacion:       "Hola {cliente}, tu equipo *{equipo}* ({numero}) entró en reparación. Te avisamos cuando esté listo. ⚡ ELECTROMEL",
+  reparado:            "Hola {cliente}, ¡tu equipo *{equipo}* ({numero}) ya está reparado! Podés pasar a buscarlo. ⚡ ELECTROMEL",
+  listo_para_retirar:  "Hola {cliente}, tu equipo *{equipo}* ({numero}) está listo para retirar. ⚡ ELECTROMEL",
+  prep_envio:          "Hola {cliente}, estamos preparando el envío de tu equipo *{equipo}* ({numero}). ⚡ ELECTROMEL",
+  enviado:             "Hola {cliente}, tu equipo *{equipo}* ({numero}) fue enviado. Código de guía: *{guia}*. ⚡ ELECTROMEL",
+  entregado:           "Hola {cliente}, confirmamos la entrega de tu equipo *{equipo}* ({numero}). ¡Gracias por confiar en ELECTROMEL! ⚡",
+  almacenamiento:      "Hola {cliente}, tu equipo *{equipo}* lleva más de 30 días en nuestro taller. Pasados ese plazo pueden generarse costos de almacenamiento. Por favor coordiná el retiro. ⚡ ELECTROMEL"
+};
+
+// Reglas semáforo: retorna 'verde'|'amarillo'|'rojo'|'gris'
+function semaforo(estado, diasEnEstado) {
+  const d = diasEnEstado;
+  switch(estado) {
+    case "ingresado":
+      return d <= 2 ? "verde" : "rojo";
+    case "en_diagnostico":
+      if (d <= 1) return "verde";
+      if (d === 2) return "amarillo";
+      return "rojo";
+    case "presupuesto_enviado":
+    case "aprobado":
+    case "espera_componentes":
+    case "prep_envio":
+    case "enviado":
+      return d <= 1 ? "verde" : "rojo";
+    case "en_reparacion":
+      if (d <= 1) return "verde";
+      if (d <= 3) return "amarillo";
+      return "rojo";
+    case "reparado":
+      return d <= 1 ? "verde" : "rojo";
+    case "listo_para_retirar":
+      if (d <= 10) return "verde";
+      if (d <= 15) return "amarillo";
+      return "rojo";
+    case "entregado":
+    case "pagado":
+      return "gris";
+    default:
+      return d <= 1 ? "verde" : "rojo";
+  }
+}
+
+function diasDesde(fechaISO) {
+  const ahora = new Date();
+  const desde = new Date(fechaISO);
+  return Math.floor((ahora - desde) / (1000 * 60 * 60 * 24));
+}
+
+// ── Estado del panel ──
+let panelFiltro = "todos";
+let panelRegistros = [];
+
+function filtrarPanel(tipo) {
+  panelFiltro = tipo;
+  document.querySelectorAll("[id^='filtro-']").forEach(b => b.classList.remove("active-si"));
+  document.getElementById("filtro-" + tipo).classList.add("active-si");
+  renderPanel();
+}
+
+function cargarPanel() {
+  panelRegistros = [];
+  let pendientes = 3;
+  const check = () => { if (--pendientes === 0) renderPanel(); };
+
+  // Ingresos
+  const tx1 = db.transaction("ingresos", "readonly");
+  const req1 = tx1.objectStore("ingresos").getAll();
+  req1.onsuccess = e => {
+    e.target.result.forEach(r => panelRegistros.push({ ...r, tipo: "ingreso" }));
+    check();
+  };
+  req1.onerror = check;
+
+  // Órdenes taller
+  const tx2 = db.transaction("ordenes", "readonly");
+  const req2 = tx2.objectStore("ordenes").getAll();
+  req2.onsuccess = e => {
+    e.target.result.forEach(r => panelRegistros.push({ ...r, tipo: "taller" }));
+    check();
+  };
+  req2.onerror = check;
+
+  // Órdenes exterior
+  const tx3 = db.transaction("exteriors", "readonly");
+  const req3 = tx3.objectStore("exteriors").getAll();
+  req3.onsuccess = e => {
+    e.target.result.forEach(r => panelRegistros.push({ ...r, tipo: "exterior" }));
+    check();
+  };
+  req3.onerror = check;
+}
+
+function renderPanel() {
+  const lista = document.getElementById("panel-lista");
+  if (!lista) return;
+
+  const buscar = (document.getElementById("panel-buscar")?.value || "").toLowerCase();
+
+  let registros = panelRegistros
+    .filter(r => {
+      if (panelFiltro === "taller")   return r.tipo === "taller" || r.tipo === "ingreso";
+      if (panelFiltro === "exterior") return r.tipo === "exterior";
+      return true;
+    })
+    .filter(r => {
+      if (!buscar) return true;
+      return (r.cliente||"").toLowerCase().includes(buscar) ||
+             (r.numero||"").toLowerCase().includes(buscar);
+    })
+    // Ordenar: rojo primero, amarillo, verde, gris
+    .sort((a, b) => {
+      const orden = { rojo: 0, amarillo: 1, verde: 2, gris: 3 };
+      const sa = semaforo(a.estado, diasDesde(a.estadoFechaISO || a.fechaISO));
+      const sb = semaforo(b.estado, diasDesde(b.estadoFechaISO || b.fechaISO));
+      return (orden[sa] ?? 4) - (orden[sb] ?? 4);
+    });
+
+  if (registros.length === 0) {
+    lista.innerHTML = '<div class="coming-soon"><div class="icon">📭</div><p>SIN REGISTROS</p></div>';
+    return;
+  }
+
+  lista.innerHTML = registros.map(r => {
+    const dias = diasDesde(r.estadoFechaISO || r.fechaISO);
+    const sem  = semaforo(r.estado, dias);
+    const semClass = `sem-${sem}`;
+    const label = LABEL_ESTADO[r.estado] || r.estado;
+    const tipoLabel = r.tipo === "exterior" ? "EXT" : r.tipo === "ingreso" ? "ING" : "OTT";
+
+    return `
+    <div class="orden-card" onclick="abrirDetalle(${r.id},'${r.tipo}')">
+      <div class="orden-header">
+        <div>
+          <div class="orden-num">${r.numero} <span style="font-size:10px;color:var(--text2);font-weight:700;">[${tipoLabel}]</span></div>
+          <div class="orden-cliente">${r.cliente || "—"}</div>
+          <div class="orden-equipo">${r.equipo || ""} ${r.modelo ? "· " + r.modelo : ""}</div>
+        </div>
+        <div class="semaforo ${semClass}"></div>
+      </div>
+      <div class="orden-estado-bar">
+        <span style="color:${sem==='verde'?'#4caf7d':sem==='amarillo'?'#f0b840':sem==='rojo'?'#e05050':'#555'}">${label}</span>
+        <span class="badge-dias">${dias}d</span>
+      </div>
+    </div>`;
+  }).join("");
+}
+
+// ── Detalle de orden ──
+let detalleActual = null;
+
+function abrirDetalle(id, tipo) {
+  const store = tipo === "exterior" ? "exteriors" : tipo === "ingreso" ? "ingresos" : "ordenes";
+  const tx  = db.transaction(store, "readonly");
+  const req = tx.objectStore(store).get(id);
+  req.onsuccess = e => {
+    const r = e.target.result;
+    if (!r) return;
+    detalleActual = { ...r, tipo, store };
+    mostrarDetalle(r, tipo);
+  };
+}
+
+function mostrarDetalle(r, tipo) {
+  document.getElementById("det-titulo").textContent = r.numero;
+  const dias = diasDesde(r.estadoFechaISO || r.fechaISO);
+  const sem  = semaforo(r.estado, dias);
+  const semColor = sem==="verde"?"#4caf7d":sem==="amarillo"?"#f0b840":sem==="rojo"?"#e05050":"#555";
+  const estadosDisp = tipo === "exterior" ? ESTADOS_EXTERIOR : ESTADOS_TALLER;
+
+  const inp = (id,val,ph) =>
+    `<input type="text" id="${id}" value="${(val||'').replace(/"/g,'&quot;')}" placeholder="${ph||''}"
+      style="width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:4px;
+      color:var(--text);font-family:var(--font);font-size:14px;font-weight:900;padding:8px;box-sizing:border-box;">`;
+
+  const ta = (id,val,ph) =>
+    `<textarea id="${id}" placeholder="${ph||''}"
+      style="width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:4px;
+      color:var(--text);font-family:var(--font);font-size:14px;font-weight:900;padding:8px;
+      min-height:60px;resize:vertical;box-sizing:border-box;">${val||''}</textarea>`;
+
+  const sec = t =>
+    `<div style="background:var(--surface2);padding:7px 0;font-size:11px;font-weight:900;
+      letter-spacing:2px;color:var(--accent);margin:14px 0 6px;">${t}</div>`;
+
+  const lbl = t =>
+    `<div style="font-size:10px;font-weight:900;color:var(--text2);letter-spacing:1px;
+      margin-top:8px;text-transform:uppercase;">${t}</div>`;
+
+  const rowInp = items => {
+    const cols = items.map(([id,val,ph]) =>
+      `<div style="flex:1;min-width:80px;">${lbl(ph)}${inp(id,val,ph)}</div>`).join("");
+    return `<div style="display:flex;gap:6px;flex-wrap:wrap;">${cols}</div>`;
+  };
+
+  const ft = r.ft || {};
+  const b  = r.bob || {};
+
+  let html = `
+    <div class="det-row"><span class="det-label">Cliente</span><span class="det-val">${r.cliente||"—"}</span></div>
+    <div class="det-row"><span class="det-label">Teléfono</span><span class="det-val">${r.tel||"—"}</span></div>
+    <div class="det-row"><span class="det-label">Equipo</span><span class="det-val">${r.equipo||"—"} ${r.modelo||""}</span></div>
+    <div class="det-row"><span class="det-label">Ingreso</span><span class="det-val">${r.fechaStr||"—"}</span></div>
+    <div class="det-row"><span class="det-label">Estado</span>
+      <span class="det-val" style="color:${semColor}">${LABEL_ESTADO[r.estado]||r.estado} · ${dias}d</span></div>`;
+
+  if (r.diagnostico) html += `<div class="det-row"><span class="det-label">Diagnóstico</span><span class="det-val">${r.diagnostico}</span></div>`;
+  if (r.total)       html += `<div class="det-row"><span class="det-label">Presupuesto</span><span class="det-val">$${r.total}</span></div>`;
+  if (r.saldo)       html += `<div class="det-row"><span class="det-label">Saldo</span><span class="det-val">$${r.saldo}</span></div>`;
+
+  html += `
+    ${sec("📋 CAMBIAR ESTADO")}
+    <select class="estado-select" id="det-estado-select" onchange="toggleGuia(this.value)">
+      ${estadosDisp.map(e=>`<option value="${e}"${r.estado===e?" selected":""}>${LABEL_ESTADO[e]||e}</option>`).join("")}
+    </select>
+    <div id="det-guia-wrap" style="display:${r.estado==='enviado'?'block':'none'};margin-top:8px;">
+      ${lbl("Código de Guía")}${inp("det-guia",r.guia||"","Número de seguimiento")}
+    </div>
+
+    ${sec("🔧 DETALLE DE REPARACIÓN")}
+    ${lbl("Descripción del trabajo realizado")}
+    ${ta("det-rep-desc",r.repDesc||"","Qué se hizo exactamente...")}
+    ${lbl("Horas trabajadas")}
+    ${inp("det-rep-horas",r.repHoras||"","Ej: 3.5")}
+    ${lbl("Componentes electrónicos utilizados")}
+    <div id="det-comp-lista"></div>
+    <button onclick="agregarComponente()"
+      style="margin-top:6px;padding:7px 12px;background:var(--surface2);border:1px solid var(--border);
+      border-radius:4px;color:var(--text);font-family:var(--font);font-size:12px;font-weight:900;cursor:pointer;">
+      + AGREGAR COMPONENTE
+    </button>
+
+    ${sec("📐 FICHA TÉCNICA")}
+    <div class="toggle-group" style="margin-bottom:8px;">
+      <button class="toggle-btn ${r.fichaTecnica?'':'active-no'}" id="ft-no" onclick="toggleFicha(false)">NO</button>
+      <button class="toggle-btn ${r.fichaTecnica?'active-si':''}" id="ft-si" onclick="toggleFicha(true)">SÍ</button>
+    </div>
+    <div id="ficha-body" style="display:${r.fichaTecnica?'block':'none'};">
+      ${rowInp([["ft-voltaje",ft.voltaje,"Voltaje"],["ft-amperaje",ft.amperaje,"Amperaje"],["ft-fase",ft.fase,"Fase"],["ft-motor",ft.motor,"Motor"]])}
+      ${rowInp([["ft-rpm",ft.rpm,"RPM"],["ft-v-motor",ft.vMotor,"V Motor"],["ft-a-motor",ft.aMotor,"A Motor"]])}
+      ${rowInp([["ft-rulemanes",ft.rulemanes,"Rulemanes"],["ft-capacitor",ft.capacitor,"Capacitor"]])}
+      ${rowInp([["ft-placa",ft.placa,"Placa Electrónica"],["ft-error",ft.error,"Error"],["ft-serie",ft.serie,"Serie"]])}
+
+      ${sec("🔄 BOBINADO DE MOTOR")}
+      <div class="toggle-group" style="margin-bottom:8px;">
+        <button class="toggle-btn ${r.bobinado?'':'active-no'}" id="bob-no" onclick="toggleBobinado(false)">NO</button>
+        <button class="toggle-btn ${r.bobinado?'active-si':''}" id="bob-si" onclick="toggleBobinado(true)">SÍ</button>
+      </div>
+      <div id="bobinado-body" style="display:${r.bobinado?'block':'none'};">
+        ${rowInp([["bob-marca",b.marca,"Marca/Modelo"],["bob-hpcv",b.hpcv,"HP/CV"],["bob-v",b.v,"V"],["bob-a",b.a,"A"]])}
+        ${rowInp([["bob-rpm",b.rpm,"RPM"],["bob-polo",b.polo,"Polos"],["bob-ranuras",b.ranuras,"Ranuras"],["bob-pasos",b.pasos,"Pasos"]])}
+        ${rowInp([["bob-espigas",b.espigas,"Espigas"],["bob-juego",b.juego,"Juego bobinas"],["bob-diam",b.diam,"Diám. alambre"]])}
+        ${rowInp([["bob-est-lxaxp",b.estLxAxP,"Estator LxAxP"],["bob-est-dxl",b.estDxL,"Estator DxL"]])}
+        ${rowInp([["bob-cap",b.cap,"Capacitor"],["bob-conex",b.conex,"Conexión"],["bob-peso",b.peso,"Peso alambre"]])}
+      </div>
+    </div>`;
+
+  document.getElementById("det-cuerpo").innerHTML = html;
+  detComponentes = JSON.parse(JSON.stringify(r.componentes || []));
+  renderComponentes();
+
+  const btns = document.getElementById("det-acciones");
+  let btnHTML = `<button class="btn btn-primary" onclick="guardarDetalle()">💾 GUARDAR TODO</button>`;
+  if (r.tel) btnHTML += `<button class="btn btn-whatsapp" onclick="enviarWADetalle()">📲 WHATSAPP</button>`;
+  btnHTML += `<button class="btn btn-secondary" onclick="abrirFotos('${r.store}',${r.id},'${r.numero}')">📷 FOTOS</button>`;
+  btns.innerHTML = btnHTML;
+
+  document.getElementById("modal-detalle").classList.add("show");
+}
+
+function toggleGuia(val) {
+  const el = document.getElementById("det-guia-wrap");
+  if (el) el.style.display = val === "enviado" ? "block" : "none";
+}
+function toggleFicha(si) {
+  document.getElementById("ft-no").className = "toggle-btn"  + (!si ? " active-no" : "");
+  document.getElementById("ft-si").className = "toggle-btn"  + (si  ? " active-si" : "");
+  document.getElementById("ficha-body").style.display = si ? "block" : "none";
+}
+function toggleBobinado(si) {
+  document.getElementById("bob-no").className = "toggle-btn" + (!si ? " active-no" : "");
+  document.getElementById("bob-si").className = "toggle-btn" + (si  ? " active-si" : "");
+  document.getElementById("bobinado-body").style.display = si ? "block" : "none";
+}
+
+let detComponentes = [];
+function agregarComponente() {
+  detComponentes.push({ nombre:"", cantidad:"", costo:0 });
+  renderComponentes();
+}
+function renderComponentes() {
+  const lista = document.getElementById("det-comp-lista");
+  if (!lista) return;
+  lista.innerHTML = detComponentes.map((c,i) => `
+    <div style="display:flex;gap:5px;margin-bottom:5px;align-items:center;">
+      <input type="text" placeholder="Componente" value="${(c.nombre||'').replace(/"/g,'&quot;')}"
+        style="flex:3;background:var(--surface2);border:1px solid var(--border);border-radius:4px;
+        color:var(--text);font-family:var(--font);font-size:13px;font-weight:700;padding:7px;"
+        oninput="detComponentes[${i}].nombre=this.value">
+      <input type="text" placeholder="Cant." value="${c.cantidad||''}"
+        style="flex:1;min-width:50px;background:var(--surface2);border:1px solid var(--border);border-radius:4px;
+        color:var(--text);font-family:var(--font);font-size:13px;font-weight:700;padding:7px;"
+        oninput="detComponentes[${i}].cantidad=this.value">
+      <input type="number" placeholder="$" value="${c.costo||''}"
+        style="flex:1;min-width:60px;background:var(--surface2);border:1px solid var(--border);border-radius:4px;
+        color:var(--accent);font-family:var(--font);font-size:13px;font-weight:700;padding:7px;"
+        oninput="detComponentes[${i}].costo=parseFloat(this.value)||0">
+      <button onclick="detComponentes.splice(${i},1);renderComponentes()"
+        style="background:var(--danger);border:none;border-radius:4px;color:#fff;
+        font-weight:900;font-size:13px;padding:7px 9px;cursor:pointer;">✕</button>
+    </div>`).join("");
+}
+
+function guardarDetalle() {
+  const r    = detalleActual;
+  const store = r.store;
+  const nuevoEstado = document.getElementById("det-estado-select").value;
+  const guia = document.getElementById("det-guia")?.value || "";
+  const fichaSi    = document.getElementById("ft-si")?.classList.contains("active-si");
+  const bobinadoSi = document.getElementById("bob-si")?.classList.contains("active-si");
+
+  const tx  = db.transaction(store, "readwrite");
+  const req = tx.objectStore(store).get(r.id);
+  req.onsuccess = e => {
+    const rec = e.target.result;
+    if (rec.estado !== nuevoEstado) rec.estadoFechaISO = new Date().toISOString();
+    rec.estado      = nuevoEstado;
+    if (guia) rec.guia = guia;
+    rec.repDesc     = document.getElementById("det-rep-desc")?.value || "";
+    rec.repHoras    = document.getElementById("det-rep-horas")?.value || "";
+    rec.componentes = JSON.parse(JSON.stringify(detComponentes));
+    rec.fichaTecnica = fichaSi;
+    if (fichaSi) {
+      rec.ft = {
+        voltaje:  document.getElementById("ft-voltaje")?.value||"",
+        amperaje: document.getElementById("ft-amperaje")?.value||"",
+        fase:     document.getElementById("ft-fase")?.value||"",
+        motor:    document.getElementById("ft-motor")?.value||"",
+        rpm:      document.getElementById("ft-rpm")?.value||"",
+        vMotor:   document.getElementById("ft-v-motor")?.value||"",
+        aMotor:   document.getElementById("ft-a-motor")?.value||"",
+        rulemanes:document.getElementById("ft-rulemanes")?.value||"",
+        capacitor:document.getElementById("ft-capacitor")?.value||"",
+        placa:    document.getElementById("ft-placa")?.value||"",
+        error:    document.getElementById("ft-error")?.value||"",
+        serie:    document.getElementById("ft-serie")?.value||"",
+      };
+    }
+    rec.bobinado = bobinadoSi;
+    if (bobinadoSi) {
+      rec.bob = {
+        marca:    document.getElementById("bob-marca")?.value||"",
+        hpcv:     document.getElementById("bob-hpcv")?.value||"",
+        v:        document.getElementById("bob-v")?.value||"",
+        a:        document.getElementById("bob-a")?.value||"",
+        rpm:      document.getElementById("bob-rpm")?.value||"",
+        polo:     document.getElementById("bob-polo")?.value||"",
+        ranuras:  document.getElementById("bob-ranuras")?.value||"",
+        pasos:    document.getElementById("bob-pasos")?.value||"",
+        espigas:  document.getElementById("bob-espigas")?.value||"",
+        juego:    document.getElementById("bob-juego")?.value||"",
+        diam:     document.getElementById("bob-diam")?.value||"",
+        estLxAxP: document.getElementById("bob-est-lxaxp")?.value||"",
+        estDxL:   document.getElementById("bob-est-dxl")?.value||"",
+        cap:      document.getElementById("bob-cap")?.value||"",
+        conex:    document.getElementById("bob-conex")?.value||"",
+        peso:     document.getElementById("bob-peso")?.value||"",
+      };
+    }
+    tx.objectStore(store).put(rec).onsuccess = () => {
+      showToast("✅ Guardado correctamente");
+      cerrarDetalle();
+      cargarPanel();
+      if (nuevoEstado==="listo_para_retirar" && diasDesde(rec.fechaISO)>=30) {
+        enviarWAAlmacenamiento(rec);
+      }
+    };
+  };
+}
+
+
+// guardarEstado reemplazado por guardarDetalle
+
+function enviarWADetalle() {
+  const r = detalleActual;
+  const estado = document.getElementById("det-estado-select").value;
+  const guia   = document.getElementById("det-guia")?.value || "";
+  enviarWAEstado(r, estado, guia);
+}
+
+function enviarWAEstado(r, estado, guia = "") {
+  if (!r.tel) { showToast("⚠️ Sin número de teléfono"); return; }
+  const tel = r.tel.replace(/\D/g, "");
+
+  // Obtener plantilla (de config o default)
+  getConfig("wa_" + estado, WA_DEFAULT[estado] || "", plantilla => {
+    if (!plantilla) { showToast("⚠️ Sin mensaje configurado para este estado"); return; }
+    const texto = plantilla
+      .replace(/{cliente}/g,  r.cliente || "")
+      .replace(/{equipo}/g,   r.equipo  || "")
+      .replace(/{numero}/g,   r.numero  || "")
+      .replace(/{total}/g,    r.total   || "")
+      .replace(/{guia}/g,     guia);
+    window.open(`https://wa.me/549${tel}?text=${encodeURIComponent(texto)}`, "_blank");
+  });
+}
+
+function enviarWAAlmacenamiento(r) {
+  if (!r.tel) return;
+  const tel = r.tel.replace(/\D/g, "");
+  getConfig("wa_almacenamiento", WA_DEFAULT["almacenamiento"], plantilla => {
+    const texto = plantilla
+      .replace(/{cliente}/g, r.cliente || "")
+      .replace(/{equipo}/g,  r.equipo  || "")
+      .replace(/{numero}/g,  r.numero  || "");
+    window.open(`https://wa.me/549${tel}?text=${encodeURIComponent(texto)}`, "_blank");
+  });
+}
+
+function cerrarDetalle() {
+  document.getElementById("modal-detalle").classList.remove("show");
+  detalleActual = null;
+}
+
+// Panel se recarga desde showTab principal
+
+
+
+// ==================== CONFIGURACIONES ====================
+
+const WA_LABELS = {
+  en_diagnostico:      "En Diagnóstico",
+  presupuesto_enviado: "Presupuesto Enviado",
+  aprobado:            "Aprobado",
+  espera_componentes:  "Espera de Componentes",
+  en_reparacion:       "En Reparación",
+  reparado:            "Reparado",
+  listo_para_retirar:  "Listo para Retirar",
+  prep_envio:          "Prep. Envío",
+  enviado:             "Enviado",
+  entregado:           "Entregado",
+  almacenamiento:      "⚠️ Aviso Almacenamiento (30 días)",
+};
+
+function cargarConfig() {
+  const campos = [
+    ["cfg-nombre",    "cfgNombre",    EMPRESA.nombre],
+    ["cfg-sub",       "cfgSub",       EMPRESA.sub],
+    ["cfg-cuit",      "cfgCuit",      EMPRESA.cuit],
+    ["cfg-iibb",      "cfgIibb",      EMPRESA.iibb],
+    ["cfg-domicilio", "cfgDomicilio", EMPRESA.domicilio],
+    ["cfg-ciudad",    "cfgCiudad",    "Neuquén"],
+    ["cfg-provincia", "cfgProvincia", "Neuquén"],
+    ["cfg-tel",       "cfgTel",       EMPRESA.tel],
+    ["cfg-email",     "cfgEmail",     EMPRESA.email],
+    ["cfg-iva",       "cfgIva",       EMPRESA.iva],
+    ["cfg-tecnico",   "cfgTecnico",   EMPRESA.tecnico],
+    ["cfg-titulo",    "cfgTitulo",    EMPRESA.titulo],
+    ["cfg-banco",     "cfgBanco",     EMPRESA.banco],
+    ["cfg-alias",     "cfgAlias",     EMPRESA.alias],
+    ["cfg-cbu",       "cfgCbu",       ""],
+    ["cfg-leyenda",   "cfgLeyenda",   EMPRESA.leyendaGarantia],
+  ];
+  let pending = campos.length;
+  campos.forEach(([elId, key, def]) => {
+    getConfig(key, def, val => {
+      const el = document.getElementById(elId);
+      if (el) el.value = val;
+      if (--pending === 0) cargarWAConfig();
+    });
+  });
+}
+
+function cargarWAConfig() {
+  const lista = document.getElementById("cfg-wa-lista");
+  if (!lista) return;
+  const keys = Object.keys(WA_LABELS);
+  let pending = keys.length;
+  const resultados = {};
+  keys.forEach(key => {
+    getConfig("wa_" + key, WA_DEFAULT[key] || "", val => {
+      resultados[key] = val;
+      if (--pending === 0) renderWAConfig(resultados);
+    });
+  });
+}
+
+function renderWAConfig(data) {
+  const lista = document.getElementById("cfg-wa-lista");
+  if (!lista) return;
+  lista.innerHTML = Object.entries(WA_LABELS).map(([key, label]) => `
+    <div style="margin-bottom:14px;">
+      <div style="font-size:11px;font-weight:900;color:var(--accent);letter-spacing:1px;margin-bottom:4px;">
+        ${label}
+      </div>
+      <textarea id="wa-${key}"
+        style="width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:4px;
+        color:var(--text);font-family:var(--font);font-size:13px;font-weight:700;padding:8px;
+        min-height:70px;resize:vertical;box-sizing:border-box;">${data[key]||""}</textarea>
+    </div>`).join("");
+}
+
+function guardarConfig() {
+  const campos = [
+    ["cfg-nombre",    "cfgNombre"],
+    ["cfg-sub",       "cfgSub"],
+    ["cfg-cuit",      "cfgCuit"],
+    ["cfg-iibb",      "cfgIibb"],
+    ["cfg-domicilio", "cfgDomicilio"],
+    ["cfg-ciudad",    "cfgCiudad"],
+    ["cfg-provincia", "cfgProvincia"],
+    ["cfg-tel",       "cfgTel"],
+    ["cfg-email",     "cfgEmail"],
+    ["cfg-iva",       "cfgIva"],
+    ["cfg-tecnico",   "cfgTecnico"],
+    ["cfg-titulo",    "cfgTitulo"],
+    ["cfg-banco",     "cfgBanco"],
+    ["cfg-alias",     "cfgAlias"],
+    ["cfg-cbu",       "cfgCbu"],
+    ["cfg-leyenda",   "cfgLeyenda"],
+  ];
+
+  // Guardar datos empresa
+  campos.forEach(([elId, key]) => {
+    const el = document.getElementById(elId);
+    if (el) setConfig(key, el.value);
+  });
+
+  // Actualizar objeto EMPRESA en memoria
+  EMPRESA.nombre         = document.getElementById("cfg-nombre")?.value    || EMPRESA.nombre;
+  EMPRESA.sub            = document.getElementById("cfg-sub")?.value       || EMPRESA.sub;
+  EMPRESA.cuit           = document.getElementById("cfg-cuit")?.value      || EMPRESA.cuit;
+  EMPRESA.iibb           = document.getElementById("cfg-iibb")?.value      || EMPRESA.iibb;
+  EMPRESA.domicilio      = document.getElementById("cfg-domicilio")?.value || EMPRESA.domicilio;
+  EMPRESA.ciudad         = (document.getElementById("cfg-ciudad")?.value||"") + ", " + (document.getElementById("cfg-provincia")?.value||"");
+  EMPRESA.tel            = document.getElementById("cfg-tel")?.value       || EMPRESA.tel;
+  EMPRESA.email          = document.getElementById("cfg-email")?.value     || EMPRESA.email;
+  EMPRESA.iva            = document.getElementById("cfg-iva")?.value       || EMPRESA.iva;
+  EMPRESA.tecnico        = document.getElementById("cfg-tecnico")?.value   || EMPRESA.tecnico;
+  EMPRESA.titulo         = document.getElementById("cfg-titulo")?.value    || EMPRESA.titulo;
+  EMPRESA.banco          = document.getElementById("cfg-banco")?.value     || EMPRESA.banco;
+  EMPRESA.alias          = document.getElementById("cfg-alias")?.value     || EMPRESA.alias;
+  EMPRESA.leyendaGarantia= document.getElementById("cfg-leyenda")?.value  || EMPRESA.leyendaGarantia;
+
+  // Guardar mensajes WA
+  Object.keys(WA_LABELS).forEach(key => {
+    const el = document.getElementById("wa-" + key);
+    if (el) setConfig("wa_" + key, el.value);
+  });
+
+  showToast("✅ Configuración guardada");
+}
+
+function resetConfigWA() {
+  const data = {};
+  Object.keys(WA_LABELS).forEach(k => data[k] = WA_DEFAULT[k] || "");
+  renderWAConfig(data);
+  showToast("↺ Mensajes WA reseteados (guardá para confirmar)");
+}
+
+
+
+function cargarConfigEnMemoria() {
+  const map = [
+    ["cfgNombre","nombre"],["cfgSub","sub"],["cfgCuit","cuit"],
+    ["cfgIibb","iibb"],["cfgDomicilio","domicilio"],["cfgTel","tel"],
+    ["cfgEmail","email"],["cfgIva","iva"],["cfgTecnico","tecnico"],
+    ["cfgTitulo","titulo"],["cfgBanco","banco"],["cfgAlias","alias"],
+    ["cfgLeyenda","leyendaGarantia"],
+  ];
+  map.forEach(([key, prop]) => {
+    getConfig(key, EMPRESA[prop], val => { EMPRESA[prop] = val; });
+  });
+  getConfig("cfgCiudad", "Neuquén", ciudad => {
+    getConfig("cfgProvincia", "Neuquén", prov => {
+      EMPRESA.ciudad = ciudad + ", " + prov;
+    });
+  });
+}
+
+
+// ==================== CONTABILIDAD ====================
+
+let periodoActual = "mes";
+
+function setPeriodo(p) {
+  periodoActual = p;
+  ["sem","mes","anio"].forEach(k => {
+    document.getElementById("cont-" + k).className =
+      "toggle-btn" + (k === p.slice(0,3) ? " active-si" : "");
+  });
+  calcularContabilidad();
+}
+
+function enPeriodo(fechaISO, periodo) {
+  if (!fechaISO) return false;
+  const f = new Date(fechaISO);
+  const hoy = new Date();
+  if (periodo === "semana") {
+    const lunes = new Date(hoy);
+    lunes.setDate(hoy.getDate() - hoy.getDay() + 1);
+    lunes.setHours(0,0,0,0);
+    return f >= lunes;
+  }
+  if (periodo === "mes") {
+    return f.getMonth() === hoy.getMonth() && f.getFullYear() === hoy.getFullYear();
+  }
+  if (periodo === "anio") {
+    return f.getFullYear() === hoy.getFullYear();
+  }
+  return false;
+}
+
+function calcularContabilidad() {
+  let ingresosCount = 0, reparadosCount = 0;
+  let ingresosDinero = 0, egresosDinero = 0;
+  let detalleOrdenes = [];
+
+  let pending = 3;
+  const check = () => {
+    if (--pending > 0) return;
+    // Leer egresos
+    const tx3 = db.transaction("egresos","readonly");
+    tx3.objectStore("egresos").getAll().onsuccess = e => {
+      e.target.result.forEach(eg => {
+        if (enPeriodo(eg.fechaISO, periodoActual)) {
+          egresosDinero += parseFloat(eg.monto)||0;
+        }
+      });
+      renderContabilidad(ingresosCount, reparadosCount, ingresosDinero, egresosDinero, detalleOrdenes);
+    };
+  };
+
+  // Ingresos
+  db.transaction("ingresos","readonly").objectStore("ingresos").getAll().onsuccess = e => {
+    e.target.result.forEach(r => {
+      if (enPeriodo(r.fechaISO, periodoActual)) ingresosCount++;
+    });
+    check();
+  };
+
+  // Órdenes taller
+  db.transaction("ordenes","readonly").objectStore("ordenes").getAll().onsuccess = e => {
+    e.target.result.forEach(r => {
+      if (!enPeriodo(r.fechaISO, periodoActual)) return;
+      const total = parseFloat(r.total)||0;
+      if (total > 0) {
+        ingresosDinero += total;
+        detalleOrdenes.push({ num: r.numero, cliente: r.cliente, total, tipo:"OTT", estado: r.estado });
+      }
+      // Costo componentes como egreso interno
+      if (r.componentes) {
+        r.componentes.forEach(c => { egresosDinero += parseFloat(c.costo)||0; });
+      }
+      if (["reparado","listo_para_retirar","enviado","entregado"].includes(r.estado)) reparadosCount++;
+    });
+    check();
+  };
+
+  // Órdenes exterior
+  db.transaction("exteriors","readonly").objectStore("exteriors").getAll().onsuccess = e => {
+    e.target.result.forEach(r => {
+      if (!enPeriodo(r.fechaISO, periodoActual)) return;
+      const total = parseFloat(r.totalGeneral)||0;
+      if (total > 0) {
+        ingresosDinero += total;
+        detalleOrdenes.push({ num: r.numero, cliente: r.cliente, total, tipo:"OTE", estado: r.estado });
+      }
+      if (r.materiales) {
+        r.materiales.forEach(m => { egresosDinero += parseFloat(m.precio)||0; });
+      }
+      if (r.estado === "pagado") reparadosCount++;
+    });
+    check();
+  };
+}
+
+function renderContabilidad(ing, rep, dinero, egresos, detalle) {
+  document.getElementById("kpi-ing-val").textContent  = ing;
+  document.getElementById("kpi-rep-val").textContent  = rep;
+  document.getElementById("kpi-dinero-val").textContent = "$" + dinero.toLocaleString("es-AR", {minimumFractionDigits:2});
+  document.getElementById("kpi-egreso-val").textContent = "$" + egresos.toLocaleString("es-AR", {minimumFractionDigits:2});
+  const gan = dinero - egresos;
+  const ganEl = document.getElementById("kpi-ganancia-val");
+  ganEl.textContent = "$" + gan.toLocaleString("es-AR", {minimumFractionDigits:2});
+  ganEl.style.color = gan >= 0 ? "var(--success)" : "var(--danger)";
+
+  const lista = document.getElementById("cont-ordenes-lista");
+  if (!detalle.length) {
+    lista.innerHTML = '<div style="padding:16px;text-align:center;color:var(--text2);font-size:12px;">Sin órdenes en el período</div>';
+    return;
+  }
+  lista.innerHTML = detalle.map(o => `
+    <div class="cont-row">
+      <div>
+        <div style="font-size:13px;font-weight:900;">${o.num} <span style="font-size:10px;color:var(--text2);">[${o.tipo}]</span></div>
+        <div style="font-size:11px;color:var(--text2);">${o.cliente||"—"} · ${LABEL_ESTADO[o.estado]||o.estado}</div>
+      </div>
+      <div style="color:var(--success);font-weight:900;">$${(o.total||0).toLocaleString("es-AR",{minimumFractionDigits:2})}</div>
+    </div>`).join("");
+
+  // Cargar también lista de egresos con fotos
+  db.transaction("egresos","readonly").objectStore("egresos").getAll().onsuccess = ev => {
+    const egrs = ev.target.result.filter(e => enPeriodo(e.fechaISO, periodoActual));
+    if (!egrs.length) return;
+    const contLista = document.getElementById("cont-ordenes-lista");
+    egrs.forEach(eg => {
+      const div = document.createElement("div");
+      div.className = "cont-row";
+      div.style.flexDirection = "column";
+      div.style.alignItems = "flex-start";
+      div.innerHTML = `
+        <div style="display:flex;justify-content:space-between;width:100%;align-items:center;">
+          <div>
+            <div style="font-size:13px;font-weight:900;">➖ ${eg.concepto}</div>
+            <div style="font-size:11px;color:var(--text2);">${eg.desc||""} ${eg.boleta?"· "+eg.boleta:""}</div>
+          </div>
+          <div style="color:var(--danger);font-weight:900;">-$${(eg.monto||0).toLocaleString("es-AR",{minimumFractionDigits:2})}</div>
+        </div>
+        ${eg.fotos && eg.fotos.length ? `
+          <div style="display:flex;gap:6px;margin-top:6px;flex-wrap:wrap;">
+            ${eg.fotos.map(f=>`
+              <div class="foto-thumb" style="width:60px;height:60px;"
+                onclick="verFotoEgreso('${f.dataURL}')">
+                <img src="${f.dataURL}" alt="boleta">
+              </div>`).join("")}
+          </div>` : ""}`;
+      contLista.appendChild(div);
+    });
+  };
+}
+
+// ── Egresos manuales ──
+// Fotos de egresos pendientes de guardar
+let egresoFotos = [];
+
+function handleFotoEgreso(files) {
+  Array.from(files).forEach(file => {
+    if (!file.type.startsWith("image/")) return;
+    const reader = new FileReader();
+    reader.onload = e => {
+      egresoFotos.push({ dataURL: e.target.result, nombre: file.name });
+      renderFotoEgresoPreview();
+    };
+    reader.readAsDataURL(file);
+  });
+  document.getElementById("egr-foto-file").value = "";
+}
+
+function renderFotoEgresoPreview() {
+  const lista = document.getElementById("egr-foto-preview");
+  if (!lista) return;
+  lista.innerHTML = egresoFotos.map((f, i) => `
+    <div class="foto-thumb">
+      <img src="${f.dataURL}" alt="boleta">
+      <button class="foto-del"
+        onclick="egresoFotos.splice(${i},1);renderFotoEgresoPreview()">✕</button>
+    </div>`).join("");
+}
+
+function guardarEgreso() {
+  const monto = parseFloat(document.getElementById("egr-monto").value)||0;
+  if (!monto) { showToast("⚠️ Ingresá un monto"); return; }
+  const concepto = document.getElementById("egr-concepto").value;
+  const desc     = document.getElementById("egr-desc").value.trim();
+  const fecha    = document.getElementById("egr-fecha").value;
+  const boleta   = document.getElementById("egr-boleta").value.trim();
+  const fechaISO = fecha ? new Date(fecha).toISOString() : new Date().toISOString();
+  const fotos    = JSON.parse(JSON.stringify(egresoFotos));
+
+  const tx = db.transaction("egresos","readwrite");
+  tx.objectStore("egresos").add({ concepto, desc, monto, boleta, fechaISO, fotos });
+  tx.oncomplete = () => {
+    showToast("✅ Egreso cargado" + (fotos.length ? ` con ${fotos.length} foto(s)` : ""));
+    document.getElementById("egr-monto").value  = "";
+    document.getElementById("egr-desc").value   = "";
+    document.getElementById("egr-boleta").value = "";
+    egresoFotos = [];
+    renderFotoEgresoPreview();
+    calcularContabilidad();
+  };
+}
+
+// ── Alquileres ──
+let alquileres = [];
+
+function cargarAlquileres() {
+  getConfig("alquileres", [], lista => {
+    alquileres = lista;
+    renderAlquileres();
+  });
+}
+
+function agregarAlquiler() {
+  alquileres.push({ desc:"", monto:"", vencimiento:"" });
+  renderAlquileres();
+}
+
+function renderAlquileres() {
+  const lista = document.getElementById("alquileres-lista");
+  if (!lista) return;
+  if (!alquileres.length) {
+    lista.innerHTML = '<div style="color:var(--text2);font-size:12px;font-weight:700;">Sin alquileres cargados</div>';
+    return;
+  }
+  lista.innerHTML = alquileres.map((a,i) => `
+    <div style="display:flex;gap:6px;margin-bottom:8px;align-items:flex-end;flex-wrap:wrap;">
+      <div style="flex:2;min-width:100px;">
+        <div style="font-size:10px;font-weight:900;color:var(--text2);margin-bottom:3px;">DESCRIPCIÓN</div>
+        <input type="text" value="${a.desc||''}" placeholder="Ej: Taller Anaya 140"
+          style="width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:4px;
+          color:var(--text);font-family:var(--font);font-size:13px;font-weight:700;padding:8px;box-sizing:border-box;"
+          oninput="alquileres[${i}].desc=this.value">
+      </div>
+      <div style="flex:1;min-width:80px;">
+        <div style="font-size:10px;font-weight:900;color:var(--text2);margin-bottom:3px;">MONTO $</div>
+        <input type="number" value="${a.monto||''}" placeholder="0.00"
+          style="width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:4px;
+          color:var(--accent);font-family:var(--font);font-size:13px;font-weight:700;padding:8px;box-sizing:border-box;"
+          oninput="alquileres[${i}].monto=this.value">
+      </div>
+      <div style="flex:1;min-width:110px;">
+        <div style="font-size:10px;font-weight:900;color:var(--text2);margin-bottom:3px;">VENCIMIENTO</div>
+        <input type="date" value="${a.vencimiento||''}"
+          style="width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:4px;
+          color:var(--text);font-family:var(--font);font-size:13px;font-weight:700;padding:8px;box-sizing:border-box;"
+          oninput="alquileres[${i}].vencimiento=this.value">
+      </div>
+      <button onclick="alquileres.splice(${i},1);renderAlquileres();guardarAlquileres()"
+        style="background:var(--danger);border:none;border-radius:4px;color:#fff;
+        font-weight:900;font-size:13px;padding:9px 11px;cursor:pointer;flex-shrink:0;">✕</button>
+    </div>
+    ${a.vencimiento ? alertaVencimiento(a) : ""}`).join("");
+}
+
+function alertaVencimiento(a) {
+  const hoy  = new Date();
+  const venc = new Date(a.vencimiento);
+  const dias = Math.ceil((venc - hoy) / (1000*60*60*24));
+  if (dias < 0)  return `<div style="color:var(--danger);font-size:11px;font-weight:900;">🔴 VENCIDO hace ${Math.abs(dias)} días</div>`;
+  if (dias <= 7) return `<div style="color:var(--accent);font-size:11px;font-weight:900;">🟡 Vence en ${dias} días</div>`;
+  return `<div style="color:var(--success);font-size:11px;font-weight:900;">🟢 Vence en ${dias} días</div>`;
+}
+
+function guardarAlquileres() {
+  setConfig("alquileres", alquileres);
+  showToast("✅ Alquileres guardados");
+}
+
+// ── Stock ──
+let stockItems = [];
+
+function cargarStock() {
+  getConfig("stock", [], lista => {
+    stockItems = lista;
+    renderStock();
+  });
+}
+
+function agregarStock() {
+  const nombre = document.getElementById("stock-nombre").value.trim();
+  const cant   = parseFloat(document.getElementById("stock-cant").value)||0;
+  const costo  = parseFloat(document.getElementById("stock-costo").value)||0;
+  if (!nombre) { showToast("⚠️ Ingresá el nombre del componente"); return; }
+
+  const idx = stockItems.findIndex(s => s.nombre.toLowerCase() === nombre.toLowerCase());
+  if (idx >= 0) {
+    stockItems[idx].cantidad += cant;
+  } else {
+    stockItems.push({ nombre, cantidad: cant, costo });
+  }
+  setConfig("stock", stockItems);
+  renderStock();
+  document.getElementById("stock-nombre").value = "";
+  document.getElementById("stock-cant").value   = "";
+  document.getElementById("stock-costo").value  = "";
+  showToast("✅ Stock actualizado");
+}
+
+function renderStock() {
+  const lista = document.getElementById("stock-lista");
+  if (!lista) return;
+  if (!stockItems.length) {
+    lista.innerHTML = '<div style="color:var(--text2);font-size:12px;font-weight:700;">Sin stock cargado</div>';
+    return;
+  }
+  lista.innerHTML = stockItems.map((s,i) => `
+    <div class="stock-row">
+      <div>
+        <div style="font-weight:900;">${s.nombre}</div>
+        <div style="font-size:11px;color:var(--text2);">Costo unit: $${s.costo||0}</div>
+      </div>
+      <div style="display:flex;align-items:center;gap:10px;">
+        <span style="font-size:16px;font-weight:900;color:${s.cantidad<=2?'var(--danger)':s.cantidad<=5?'var(--accent)':'var(--success)'};">
+          ${s.cantidad} uds
+        </span>
+        <button onclick="stockItems.splice(${i},1);setConfig('stock',stockItems);renderStock()"
+          style="background:var(--danger);border:none;border-radius:4px;color:#fff;
+          font-weight:900;font-size:12px;padding:5px 8px;cursor:pointer;">✕</button>
+      </div>
+    </div>`).join("");
+}
+
+// ── Google Drive Config ──
+function guardarConfigDrive() {
+  const key      = document.getElementById("cfg-drive-key")?.value.trim()      || "";
+  const clientid = document.getElementById("cfg-drive-clientid")?.value.trim() || "";
+  const folder   = document.getElementById("cfg-drive-folder")?.value.trim()   || "";
+  setConfig("driveKey",      key);
+  setConfig("driveClientId", clientid);
+  setConfig("driveFolder",   folder);
+  showToast("✅ Configuración Drive guardada");
+  actualizarEstadoDrive(key, clientid, folder);
+}
+
+function actualizarEstadoDrive(key, clientid, folder) {
+  const el = document.getElementById("drive-estado");
+  if (!el) return;
+  if (key && clientid && folder) {
+    el.innerHTML = '🟢 <span style="color:var(--success);">Configurado — pendiente de prueba de conexión</span>';
+  } else {
+    el.innerHTML = '🔴 <span style="color:var(--danger);">Faltan datos de configuración</span>';
+  }
+}
+
+function testDriveConexion() {
+  const el = document.getElementById("drive-estado");
+  getConfig("driveKey","", key => {
+    getConfig("driveClientId","", cid => {
+      getConfig("driveFolder","", folder => {
+        if (!key || !cid || !folder) {
+          if (el) el.innerHTML = '🔴 <span style="color:var(--danger);">Completá los datos primero</span>';
+          return;
+        }
+        if (el) el.innerHTML = '🟡 <span style="color:var(--accent);">Para probar la conexión real necesitás abrir la app desde un servidor web (no como archivo local). Guardá los datos y usalos cuando la app esté hosteada.</span>';
+      });
+    });
+  });
+}
+
+function cargarConfigDrive() {
+  getConfig("driveKey","", k => {
+    const el = document.getElementById("cfg-drive-key");
+    if (el) el.value = k;
+    getConfig("driveClientId","", cid => {
+      const el2 = document.getElementById("cfg-drive-clientid");
+      if (el2) el2.value = cid;
+      getConfig("driveFolder","", folder => {
+        const el3 = document.getElementById("cfg-drive-folder");
+        if (el3) el3.value = folder;
+        actualizarEstadoDrive(k, cid, folder);
+      });
+    });
+  });
+}
+
+
+
+// ==================== FOTOS + DRIVE ====================
+
+const FOTO_CATEGORIAS = {
+  ingreso:     "📥 Al Ingreso",
+  diagnostico: "🔬 Diagnóstico",
+  reparacion:  "🔧 Durante Reparación",
+  terminado:   "✅ Terminado",
+};
+
+let fotosCtx = { store: null, id: null, numero: null };
+let fotosParaSubir = []; // { file, dataURL, categoria }
+
+function abrirFotos(store, id, numero) {
+  fotosCtx = { store, id, numero };
+  fotosParaSubir = [];
+  document.getElementById("fotos-titulo").textContent   = "📷 FOTOS — " + numero;
+  document.getElementById("fotos-subtitulo").textContent = "Subí fotos del equipo a Google Drive";
+  document.getElementById("foto-preview-lista").innerHTML = "";
+  document.getElementById("foto-upload-status").textContent = "";
+  document.getElementById("btn-subir-fotos").style.display = "none";
+  document.getElementById("modal-fotos").classList.add("show");
+  renderFotosGuardadas();
+}
+
+function cerrarFotos() {
+  document.getElementById("modal-fotos").classList.remove("show");
+  fotosParaSubir = [];
+}
+
+// ── Selección de archivos ──
+function handleFotoSeleccionada(files) {
+  Array.from(files).forEach(file => {
+    if (!file.type.startsWith("image/")) return;
+    const reader = new FileReader();
+    reader.onload = e => {
+      const cat = document.getElementById("foto-categoria").value;
+      fotosParaSubir.push({ file, dataURL: e.target.result, categoria: cat });
+      renderFotoPreview();
+    };
+    reader.readAsDataURL(file);
+  });
+  document.getElementById("foto-file-input").value = "";
+}
+
+function handleDrop(event) {
+  event.preventDefault();
+  event.currentTarget.style.borderColor = "var(--border)";
+  handleFotoSeleccionada(event.dataTransfer.files);
+}
+
+function renderFotoPreview() {
+  const lista = document.getElementById("foto-preview-lista");
+  lista.innerHTML = fotosParaSubir.map((f, i) => `
+    <div class="foto-thumb">
+      <img src="${f.dataURL}" alt="foto">
+      <div style="position:absolute;bottom:0;left:0;right:0;background:rgba(0,0,0,0.7);
+        font-size:9px;font-weight:900;color:#fff;text-align:center;padding:2px;">
+        ${FOTO_CATEGORIAS[f.categoria]?.split(" ")[0] || "📷"}
+      </div>
+      <button class="foto-del" onclick="quitarFotoPreview(${i})">✕</button>
+    </div>`).join("");
+  document.getElementById("btn-subir-fotos").style.display =
+    fotosParaSubir.length > 0 ? "block" : "none";
+}
+
+function quitarFotoPreview(i) {
+  fotosParaSubir.splice(i, 1);
+  renderFotoPreview();
+}
+
+// ── Subida a Drive ──
+async function subirFotos() {
+  if (!fotosParaSubir.length) return;
+
+  const status = document.getElementById("foto-upload-status");
+  const btnSubir = document.getElementById("btn-subir-fotos");
+
+  // Verificar config Drive
+  const key      = await getConfigAsync("driveKey", "");
+  const clientId = await getConfigAsync("driveClientId", "");
+  const rootFolder = await getConfigAsync("driveFolder", "");
+
+  if (!key || !clientId || !rootFolder) {
+    // Sin Drive: guardar localmente en IndexedDB como base64
+    status.textContent = "⚠️ Drive no configurado — guardando localmente...";
+    await guardarFotosLocal();
+    return;
+  }
+
+  // Con Drive configurado: intentar OAuth + subida
+  status.textContent = "🔄 Conectando con Google Drive...";
+  btnSubir.disabled = true;
+
+  try {
+    const token = await obtenerTokenDrive(clientId);
+    if (!token) throw new Error("No se obtuvo token");
+
+    // Crear o buscar carpeta de la orden en Drive
+    const folderOrden = await crearCarpetaDrive(token, fotosCtx.numero, rootFolder);
+    status.textContent = `🔄 Subiendo ${fotosParaSubir.length} foto(s)...`;
+
+    const links = [];
+    for (let i = 0; i < fotosParaSubir.length; i++) {
+      const f = fotosParaSubir[i];
+      status.textContent = `☁️ Subiendo foto ${i+1}/${fotosParaSubir.length}...`;
+      const link = await subirArchivoaDrive(token, f.file, folderOrden, f.categoria);
+      links.push({ link, categoria: f.categoria, nombre: f.file.name, fecha: new Date().toISOString() });
+    }
+
+    await guardarLinksEnOrden(links);
+    status.innerHTML = `<span style="color:var(--success)">✅ ${links.length} foto(s) subidas a Drive</span>`;
+    fotosParaSubir = [];
+    renderFotoPreview();
+    renderFotosGuardadas();
+
+  } catch (err) {
+    console.error(err);
+    status.innerHTML = `<span style="color:var(--danger)">❌ Error Drive: ${err.message} — guardando local...</span>`;
+    await guardarFotosLocal();
+  } finally {
+    btnSubir.disabled = false;
+  }
+}
+
+// ── OAuth2 Google ──
+function obtenerTokenDrive(clientId) {
+  return new Promise((resolve, reject) => {
+    if (typeof google === "undefined" || !google.accounts) {
+      reject(new Error("Google API no cargada. Necesitás conexión a internet."));
+      return;
+    }
+    const client = google.accounts.oauth2.initTokenClient({
+      client_id: clientId,
+      scope: "https://www.googleapis.com/auth/drive.file",
+      callback: (resp) => {
+        if (resp.error) reject(new Error(resp.error));
+        else resolve(resp.access_token);
+      },
+    });
+    client.requestAccessToken({ prompt: "" });
+  });
+}
+
+// ── Crear carpeta en Drive ──
+async function crearCarpetaDrive(token, nombreCarpeta, parentId) {
+  // Buscar si ya existe
+  const q = encodeURIComponent(`name='${nombreCarpeta}' and mimeType='application/vnd.google-apps.folder' and '${parentId}' in parents and trashed=false`);
+  const buscarResp = await fetch(`https://www.googleapis.com/drive/v3/files?q=${q}&fields=files(id,name)`, {
+    headers: { Authorization: "Bearer " + token }
+  });
+  const buscar = await buscarResp.json();
+  if (buscar.files && buscar.files.length > 0) return buscar.files[0].id;
+
+  // Crear
+  const crearResp = await fetch("https://www.googleapis.com/drive/v3/files", {
+    method: "POST",
+    headers: { Authorization: "Bearer " + token, "Content-Type": "application/json" },
+    body: JSON.stringify({
+      name: nombreCarpeta,
+      mimeType: "application/vnd.google-apps.folder",
+      parents: [parentId]
+    })
+  });
+  const carpeta = await crearResp.json();
+  return carpeta.id;
+}
+
+// ── Subir archivo a Drive ──
+async function subirArchivoaDrive(token, file, folderId, categoria) {
+  const nombre = `${categoria}_${Date.now()}_${file.name}`;
+  const metadata = { name: nombre, parents: [folderId] };
+
+  const form = new FormData();
+  form.append("metadata", new Blob([JSON.stringify(metadata)], { type: "application/json" }));
+  form.append("file", file);
+
+  const resp = await fetch("https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id,webViewLink", {
+    method: "POST",
+    headers: { Authorization: "Bearer " + token },
+    body: form
+  });
+  const data = await resp.json();
+  return data.webViewLink || `https://drive.google.com/file/d/${data.id}/view`;
+}
+
+// ── Guardar links en la orden ──
+async function guardarLinksEnOrden(nuevoLinks) {
+  const { store, id } = fotosCtx;
+  return new Promise((resolve, reject) => {
+    const tx  = db.transaction(store, "readwrite");
+    const req = tx.objectStore(store).get(id);
+    req.onsuccess = e => {
+      const rec = e.target.result;
+      rec.fotos = [...(rec.fotos || []), ...nuevoLinks];
+      tx.objectStore(store).put(rec).onsuccess = resolve;
+    };
+    req.onerror = reject;
+  });
+}
+
+// ── Guardar fotos localmente (sin Drive) ──
+async function guardarFotosLocal() {
+  const nuevas = fotosParaSubir.map(f => ({
+    link:      null,
+    dataURL:   f.dataURL,
+    categoria: f.categoria,
+    nombre:    f.file.name,
+    fecha:     new Date().toISOString(),
+    local:     true,
+  }));
+  await guardarLinksEnOrden(nuevas);
+  const status = document.getElementById("foto-upload-status");
+  status.innerHTML = `<span style="color:var(--success)">✅ ${nuevas.length} foto(s) guardadas localmente</span>`;
+  fotosParaSubir = [];
+  renderFotoPreview();
+  renderFotosGuardadas();
+}
+
+// ── Mostrar fotos guardadas por categoría ──
+function renderFotosGuardadas() {
+  const { store, id } = fotosCtx;
+  const tx  = db.transaction(store, "readonly");
+  const req = tx.objectStore(store).get(id);
+  req.onsuccess = e => {
+    const rec = e.target.result;
+    const fotos = rec?.fotos || [];
+    const cont  = document.getElementById("fotos-guardadas");
+    if (!fotos.length) {
+      cont.innerHTML = '<div style="text-align:center;color:var(--text2);font-size:12px;font-weight:700;padding:10px;">Sin fotos guardadas</div>';
+      return;
+    }
+    // Agrupar por categoría
+    const grupos = {};
+    fotos.forEach(f => {
+      if (!grupos[f.categoria]) grupos[f.categoria] = [];
+      grupos[f.categoria].push(f);
+    });
+    cont.innerHTML = Object.entries(grupos).map(([cat, imgs]) => `
+      <div class="foto-cat-titulo">${FOTO_CATEGORIAS[cat] || cat}</div>
+      <div class="foto-cat-grid">
+        ${imgs.map((f, gi) => `
+          <div class="foto-thumb">
+            ${f.dataURL
+              ? `<img src="${f.dataURL}" alt="${cat}">`
+              : `<a href="${f.link}" target="_blank" style="display:flex;align-items:center;justify-content:center;
+                  width:100%;height:100%;background:var(--surface2);color:var(--accent);font-size:24px;text-decoration:none;">☁️</a>`
+            }
+            <button class="foto-del" onclick="eliminarFoto('${cat}',${gi})">✕</button>
+          </div>`).join("")}
+      </div>`).join("");
+  };
+}
+
+// ── Eliminar foto guardada ──
+function eliminarFoto(categoria, indexEnCat) {
+  const { store, id } = fotosCtx;
+  const tx  = db.transaction(store, "readwrite");
+  const req = tx.objectStore(store).get(id);
+  req.onsuccess = e => {
+    const rec  = e.target.result;
+    const fotos = rec.fotos || [];
+    // Reconstruir sin la foto eliminada
+    let contCat = -1;
+    rec.fotos = fotos.filter(f => {
+      if (f.categoria === categoria) {
+        contCat++;
+        return contCat !== indexEnCat;
+      }
+      return true;
+    });
+    tx.objectStore(store).put(rec).onsuccess = () => {
+      showToast("🗑️ Foto eliminada");
+      renderFotosGuardadas();
+    };
+  };
+}
+
+// ── Helper: getConfig como Promise ──
+function getConfigAsync(key, def) {
+  return new Promise(resolve => getConfig(key, def, resolve));
+}
+
+
+
+// ==================== FOTOS EN INGRESO ====================
+
+let fotosIngreso = []; // { file, dataURL, categoria }
+let ingresoGuardadoId   = null;
+let ingresoGuardadoStore = "ingresos";
+
+// Se llama después de guardar el ingreso — habilita la sección de fotos
+function resetFormIngreso() {
+  ["ing-cliente","ing-cuit","ing-tel","ing-direccion","ing-cp",
+   "ing-ciudad","ing-provincia","ing-equipo","ing-modelo",
+   "ing-falla","ing-error","ing-correo","ing-codigo-envio"]
+    .forEach(id => { const el = document.getElementById(id); if(el) el.value=""; });
+  toggleEncomienda(false);
+  // Reset fotos
+  fotosIngreso = [];
+  ingresoGuardadoId = null;
+  const wrap = document.getElementById("ing-fotos-wrap");
+  const msg  = document.getElementById("ing-foto-msg");
+  if (wrap) wrap.style.display = "none";
+  if (msg)  msg.style.display  = "block";
+  document.getElementById("ing-foto-preview").innerHTML = "";
+  document.getElementById("ing-fotos-guardadas").innerHTML = "";
+  document.getElementById("ing-foto-status").textContent = "";
+  document.getElementById("ing-btn-subir").style.display = "none";
+}
+
+function habilitarFotosIngreso(id) {
+  ingresoGuardadoId = id;
+  const wrap = document.getElementById("ing-fotos-wrap");
+  if (wrap) {
+    wrap.style.display = "block";
+    // Mostrar fotos ya guardadas si las hay
+    renderFotosGuardadasIngreso();
+  }
+  // Actualizar el texto de instrucción
+  const p = wrap?.previousElementSibling;
+  if (p) p.style.display = "none";
+}
+
+function handleFotoIngreso(files) {
+  Array.from(files).forEach(file => {
+    if (!file.type.startsWith("image/")) return;
+    const reader = new FileReader();
+    reader.onload = e => {
+      const cat = document.getElementById("ing-foto-cat").value;
+      fotosIngreso.push({ file, dataURL: e.target.result, categoria: cat });
+      renderFotoPreviewIngreso();
+    };
+    reader.readAsDataURL(file);
+  });
+  document.getElementById("ing-foto-file").value = "";
+}
+
+function renderFotoPreviewIngreso() {
+  const lista = document.getElementById("ing-foto-preview");
+  if (!lista) return;
+  lista.innerHTML = fotosIngreso.map((f, i) => `
+    <div class="foto-thumb">
+      <img src="${f.dataURL}" alt="foto">
+      <div style="position:absolute;bottom:0;left:0;right:0;background:rgba(0,0,0,0.7);
+        font-size:9px;font-weight:900;color:#fff;text-align:center;padding:2px;">
+        ${FOTO_CATEGORIAS[f.categoria]?.split(" ")[0] || "📷"}
+      </div>
+      <button class="foto-del" onclick="fotosIngreso.splice(${i},1);renderFotoPreviewIngreso()">✕</button>
+    </div>`).join("");
+  const btn = document.getElementById("ing-btn-subir");
+  if (btn) btn.style.display = fotosIngreso.length > 0 ? "block" : "none";
+}
+
+async function subirFotosIngreso() {
+  if (!fotosIngreso.length || ingresoGuardadoId === null) return;
+
+  // Reutilizar el mismo flujo Drive/local del modal
+  // Temporalmente seteamos el contexto del modal
+  const prevCtx = { ...fotosCtx };
+  fotosCtx = { store: ingresoGuardadoStore, id: ingresoGuardadoId, numero: ultimoIngreso?.numero || "" };
+  fotosParaSubir = [...fotosIngreso];
+
+  const status = document.getElementById("ing-foto-status");
+  const btn    = document.getElementById("ing-btn-subir");
+  if (status) status.textContent = "🔄 Subiendo fotos...";
+  if (btn)    btn.disabled = true;
+
+  const key      = await getConfigAsync("driveKey", "");
+  const clientId = await getConfigAsync("driveClientId", "");
+  const rootFolder = await getConfigAsync("driveFolder", "");
+
+  try {
+    if (key && clientId && rootFolder) {
+      const token = await obtenerTokenDrive(clientId);
+      const folderOrden = await crearCarpetaDrive(token, fotosCtx.numero, rootFolder);
+      const links = [];
+      for (let i = 0; i < fotosParaSubir.length; i++) {
+        const f = fotosParaSubir[i];
+        if (status) status.textContent = `☁️ Subiendo foto ${i+1}/${fotosParaSubir.length}...`;
+        const link = await subirArchivoaDrive(token, f.file, folderOrden, f.categoria);
+        links.push({ link, categoria: f.categoria, nombre: f.file.name, fecha: new Date().toISOString() });
+      }
+      await guardarLinksEnOrden(links);
+      if (status) status.innerHTML = `<span style="color:var(--success)">✅ ${links.length} foto(s) subidas a Drive</span>`;
+    } else {
+      // Local
+      const nuevas = fotosParaSubir.map(f => ({
+        link: null, dataURL: f.dataURL, categoria: f.categoria,
+        nombre: f.file.name, fecha: new Date().toISOString(), local: true,
+      }));
+      await guardarLinksEnOrden(nuevas);
+      if (status) status.innerHTML = `<span style="color:var(--success)">✅ ${nuevas.length} foto(s) guardadas localmente</span>`;
+    }
+    fotosIngreso = [];
+    fotosParaSubir = [];
+    renderFotoPreviewIngreso();
+    renderFotosGuardadasIngreso();
+  } catch (err) {
+    console.error(err);
+    if (status) status.innerHTML = `<span style="color:var(--danger)">❌ ${err.message}</span>`;
+  } finally {
+    if (btn) btn.disabled = false;
+    fotosCtx = prevCtx;
+  }
+}
+
+function renderFotosGuardadasIngreso() {
+  if (ingresoGuardadoId === null) return;
+  const tx  = db.transaction(ingresoGuardadoStore, "readonly");
+  const req = tx.objectStore(ingresoGuardadoStore).get(ingresoGuardadoId);
+  req.onsuccess = e => {
+    const rec   = e.target.result;
+    const fotos = rec?.fotos || [];
+    const cont  = document.getElementById("ing-fotos-guardadas");
+    if (!cont) return;
+    if (!fotos.length) { cont.innerHTML = ""; return; }
+    const grupos = {};
+    fotos.forEach(f => {
+      if (!grupos[f.categoria]) grupos[f.categoria] = [];
+      grupos[f.categoria].push(f);
+    });
+    cont.innerHTML = Object.entries(grupos).map(([cat, imgs]) => `
+      <div class="foto-cat-titulo">${FOTO_CATEGORIAS[cat] || cat}</div>
+      <div class="foto-cat-grid">
+        ${imgs.map(f => `
+          <div class="foto-thumb">
+            ${f.dataURL
+              ? `<img src="${f.dataURL}" alt="${cat}">`
+              : `<a href="${f.link}" target="_blank"
+                  style="display:flex;align-items:center;justify-content:center;
+                  width:100%;height:100%;background:var(--surface2);color:var(--accent);
+                  font-size:24px;text-decoration:none;">☁️</a>`}
+          </div>`).join("")}
+      </div>`).join("");
+  };
+}
+
+
+
+// ==================== FOTOS EN OTT / OTE ====================
+
+// Estado por prefijo ('ott' o 'ote')
+const ordenFotosCtx = {
+  ott: { store: "ordenes",   id: null, numero: null, fotos: [] },
+  ote: { store: "exteriors", id: null, numero: null, fotos: [] },
+};
+
+function habilitarFotosOrden(prefijo, id, numero) {
+  const ctx = ordenFotosCtx[prefijo];
+  ctx.id     = id;
+  ctx.numero = numero;
+  ctx.fotos  = [];
+  const wrap = document.getElementById(prefijo + "-fotos-wrap");
+  const msg  = document.getElementById(prefijo + "-foto-msg");
+  if (wrap) wrap.style.display = "block";
+  if (msg)  msg.style.display  = "none";
+  renderFotosGuardadasOrden(prefijo);
+}
+
+function handleFotoOrden(prefijo, files) {
+  const ctx = ordenFotosCtx[prefijo];
+  Array.from(files).forEach(file => {
+    if (!file.type.startsWith("image/")) return;
+    const reader = new FileReader();
+    reader.onload = e => {
+      const cat = document.getElementById(prefijo + "-foto-cat").value;
+      ctx.fotos.push({ file, dataURL: e.target.result, categoria: cat });
+      renderPreviewOrden(prefijo);
+    };
+    reader.readAsDataURL(file);
+  });
+  document.getElementById(prefijo + "-foto-file").value = "";
+}
+
+function renderPreviewOrden(prefijo) {
+  const ctx   = ordenFotosCtx[prefijo];
+  const lista = document.getElementById(prefijo + "-foto-preview");
+  if (!lista) return;
+  lista.innerHTML = ctx.fotos.map((f, i) => `
+    <div class="foto-thumb">
+      <img src="${f.dataURL}" alt="foto">
+      <div style="position:absolute;bottom:0;left:0;right:0;background:rgba(0,0,0,0.7);
+        font-size:9px;font-weight:900;color:#fff;text-align:center;padding:2px;">
+        ${FOTO_CATEGORIAS[f.categoria]?.split(" ")[0] || "📷"}
+      </div>
+      <button class="foto-del"
+        onclick="ordenFotosCtx['${prefijo}'].fotos.splice(${i},1);renderPreviewOrden('${prefijo}')">✕</button>
+    </div>`).join("");
+  const btn = document.getElementById(prefijo + "-btn-subir");
+  if (btn) btn.style.display = ctx.fotos.length > 0 ? "block" : "none";
+}
+
+async function subirFotosOrden(prefijo) {
+  const ctx = ordenFotosCtx[prefijo];
+  if (!ctx.fotos.length || ctx.id === null) return;
+
+  const status = document.getElementById(prefijo + "-foto-status");
+  const btn    = document.getElementById(prefijo + "-btn-subir");
+  if (status) status.textContent = "🔄 Subiendo fotos...";
+  if (btn)    btn.disabled = true;
+
+  // Usar contexto del modal de fotos temporalmente
+  const prevCtx = { ...fotosCtx };
+  fotosCtx    = { store: ctx.store, id: ctx.id, numero: ctx.numero };
+  fotosParaSubir = [...ctx.fotos];
+
+  const key        = await getConfigAsync("driveKey", "");
+  const clientId   = await getConfigAsync("driveClientId", "");
+  const rootFolder = await getConfigAsync("driveFolder", "");
+
+  try {
+    if (key && clientId && rootFolder) {
+      const token       = await obtenerTokenDrive(clientId);
+      const folderOrden = await crearCarpetaDrive(token, ctx.numero, rootFolder);
+      const links = [];
+      for (let i = 0; i < fotosParaSubir.length; i++) {
+        const f = fotosParaSubir[i];
+        if (status) status.textContent = `☁️ Subiendo foto ${i+1}/${fotosParaSubir.length}...`;
+        const link = await subirArchivoaDrive(token, f.file, folderOrden, f.categoria);
+        links.push({ link, categoria: f.categoria, nombre: f.file.name, fecha: new Date().toISOString() });
+      }
+      await guardarLinksEnOrden(links);
+      if (status) status.innerHTML = `<span style="color:var(--success)">✅ ${links.length} foto(s) subidas a Drive</span>`;
+    } else {
+      const nuevas = fotosParaSubir.map(f => ({
+        link: null, dataURL: f.dataURL, categoria: f.categoria,
+        nombre: f.file.name, fecha: new Date().toISOString(), local: true,
+      }));
+      await guardarLinksEnOrden(nuevas);
+      if (status) status.innerHTML = `<span style="color:var(--success)">✅ ${nuevas.length} foto(s) guardadas localmente</span>`;
+    }
+    ctx.fotos = [];
+    fotosParaSubir = [];
+    renderPreviewOrden(prefijo);
+    renderFotosGuardadasOrden(prefijo);
+  } catch (err) {
+    console.error(err);
+    if (status) status.innerHTML = `<span style="color:var(--danger)">❌ ${err.message}</span>`;
+  } finally {
+    if (btn)    btn.disabled = false;
+    fotosCtx = prevCtx;
+  }
+}
+
+function renderFotosGuardadasOrden(prefijo) {
+  const ctx  = ordenFotosCtx[prefijo];
+  if (ctx.id === null) return;
+  const tx   = db.transaction(ctx.store, "readonly");
+  const req  = tx.objectStore(ctx.store).get(ctx.id);
+  req.onsuccess = e => {
+    const rec   = e.target.result;
+    const fotos = rec?.fotos || [];
+    const cont  = document.getElementById(prefijo + "-fotos-guardadas");
+    if (!cont) return;
+    if (!fotos.length) { cont.innerHTML = ""; return; }
+    const grupos = {};
+    fotos.forEach(f => {
+      if (!grupos[f.categoria]) grupos[f.categoria] = [];
+      grupos[f.categoria].push(f);
+    });
+    cont.innerHTML = Object.entries(grupos).map(([cat, imgs]) => `
+      <div class="foto-cat-titulo">${FOTO_CATEGORIAS[cat] || cat}</div>
+      <div class="foto-cat-grid">
+        ${imgs.map(f => `
+          <div class="foto-thumb">
+            ${f.dataURL
+              ? `<img src="${f.dataURL}" alt="${cat}">`
+              : `<a href="${f.link}" target="_blank"
+                  style="display:flex;align-items:center;justify-content:center;
+                  width:100%;height:100%;background:var(--surface2);color:var(--accent);
+                  font-size:24px;text-decoration:none;">☁️</a>`}
+          </div>`).join("")}
+      </div>`).join("");
+  };
+}
+
+
+
+// ══════════════════════════════════════
+// BACKUP — Exportar / Importar
+// ══════════════════════════════════════
+async function exportarBackup() {
+  const status = document.getElementById("backup-status");
+  if (status) status.textContent = "🔄 Generando backup...";
+  try {
+    const stores = ["ingresos","ordenes","exteriors","egresos","config"];
+    const backup = { version: 1, fecha: new Date().toISOString(), datos: {} };
+    let pending = stores.length;
+    for (const store of stores) {
+      await new Promise((res, rej) => {
+        const tx  = db.transaction(store, "readonly");
+        const req = tx.objectStore(store).getAll();
+        req.onsuccess = e => { backup.datos[store] = e.target.result; res(); };
+        req.onerror   = rej;
+      });
+    }
+    const blob = new Blob([JSON.stringify(backup, null, 2)], { type: "application/json" });
+    const url  = URL.createObjectURL(blob);
+    const a    = document.createElement("a");
+    a.href     = url;
+    a.download = `ELECTROMEL-backup-${new Date().toISOString().slice(0,10)}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+    if (status) status.innerHTML = `<span style="color:var(--success)">✅ Backup exportado correctamente</span>`;
+  } catch(e) {
+    if (status) status.innerHTML = `<span style="color:var(--danger)">❌ Error: ${e.message}</span>`;
+  }
+}
+
+function importarBackup(input) {
+  const status = document.getElementById("backup-status");
+  const file   = input.files[0];
+  if (!file) return;
+  if (!confirm("⚠️ Importar backup REEMPLAZARÁ todos los datos actuales. ¿Continuás?")) {
+    input.value = ""; return;
+  }
+  const reader = new FileReader();
+  reader.onload = async e => {
+    try {
+      const backup = JSON.parse(e.target.result);
+      if (!backup.datos) throw new Error("Archivo inválido");
+      if (status) status.textContent = "🔄 Restaurando datos...";
+      const stores = ["ingresos","ordenes","exteriors","egresos","config"];
+      for (const store of stores) {
+        if (!backup.datos[store]) continue;
+        await new Promise((res, rej) => {
+          const tx = db.transaction(store, "readwrite");
+          const os = tx.objectStore(store);
+          os.clear().onsuccess = () => {
+            let count = backup.datos[store].length;
+            if (count === 0) { res(); return; }
+            backup.datos[store].forEach(item => {
+              const r = os.put(item);
+              r.onsuccess = () => { if (--count === 0) res(); };
+              r.onerror   = rej;
+            });
+          };
+        });
+      }
+      if (status) status.innerHTML = `<span style="color:var(--success)">✅ Backup restaurado. Recargá la app.</span>`;
+      setTimeout(() => location.reload(), 2000);
+    } catch(err) {
+      if (status) status.innerHTML = `<span style="color:var(--danger)">❌ ${err.message}</span>`;
+    }
+  };
+  reader.readAsText(file);
+  input.value = "";
+}
+
+// ══════════════════════════════════════
+// BUSCADOR RÁPIDO DE CLIENTE / INGRESO
+// ══════════════════════════════════════
+function buscarRapido(termino) {
+  if (!termino || termino.length < 2) {
+    document.getElementById("busqueda-resultados").innerHTML = "";
+    return;
+  }
+  const t = termino.toLowerCase();
+  const resultados = [];
+  let pending = 3;
+  const check = () => {
+    if (--pending > 0) return;
+    resultados.sort((a,b) => new Date(b.fechaISO) - new Date(a.fechaISO));
+    renderBusquedaResultados(resultados);
+  };
+  const buscarEnStore = (store, tipo) => {
+    db.transaction(store,"readonly").objectStore(store).getAll().onsuccess = e => {
+      e.target.result.forEach(r => {
+        if ((r.cliente||"").toLowerCase().includes(t) ||
+            (r.numero||"").toLowerCase().includes(t)  ||
+            (r.tel||"").toLowerCase().includes(t)     ||
+            (r.equipo||"").toLowerCase().includes(t)) {
+          resultados.push({ ...r, _tipo: tipo });
+        }
+      });
+      check();
+    };
+  };
+  buscarEnStore("ingresos",  "ING");
+  buscarEnStore("ordenes",   "OTT");
+  buscarEnStore("exteriors", "OTE");
+}
+
+function renderBusquedaResultados(lista) {
+  const cont = document.getElementById("busqueda-resultados");
+  if (!cont) return;
+  if (!lista.length) {
+    cont.innerHTML = '<div style="padding:10px;text-align:center;color:var(--text2);font-size:12px;font-weight:700;">Sin resultados</div>';
+    return;
+  }
+  cont.innerHTML = lista.slice(0,8).map(r => `
+    <div style="padding:10px 12px;border-bottom:1px solid var(--border);cursor:pointer;"
+      onclick="autocompletarDesdeHistorial(${JSON.stringify(r).replace(/"/g,'&quot;')})">
+      <div style="display:flex;justify-content:space-between;align-items:center;">
+        <span style="font-size:13px;font-weight:900;">${r.numero}</span>
+        <span style="font-size:10px;font-weight:900;color:var(--text2);">[${r._tipo}] ${r.fechaStr||""}</span>
+      </div>
+      <div style="font-size:12px;color:var(--text2);margin-top:2px;">${r.cliente||"—"} · ${r.equipo||"—"}</div>
+    </div>`).join("");
+}
+
+function autocompletarDesdeHistorial(r) {
+  // Autocompleta los datos del cliente en el form activo
+  const prefijo = document.getElementById("panel-ingreso").classList.contains("active") ? "ing" :
+                  document.getElementById("panel-ott").classList.contains("active")     ? "ott" :
+                  document.getElementById("panel-ote").classList.contains("active")     ? "ote" : null;
+  if (!prefijo) return;
+  const campos = ["cliente","cuit","tel","direccion","cp","ciudad","provincia"];
+  campos.forEach(c => {
+    const el = document.getElementById(prefijo + "-" + c);
+    if (el && r[c]) el.value = r[c];
+  });
+  document.getElementById("busqueda-resultados").innerHTML = "";
+  document.getElementById("busqueda-input").value = "";
+  document.getElementById("modal-busqueda").classList.remove("show");
+  showToast("✅ Datos del cliente cargados");
+}
+
+function abrirBusqueda() {
+  document.getElementById("modal-busqueda").classList.add("show");
+  setTimeout(() => document.getElementById("busqueda-input")?.focus(), 100);
+}
+function cerrarBusqueda() {
+  document.getElementById("modal-busqueda").classList.remove("show");
+  document.getElementById("busqueda-resultados").innerHTML = "";
+  document.getElementById("busqueda-input").value = "";
+}
+
+// ══════════════════════════════════════
+// NOTIFICACIONES AL ABRIR LA APP
+// ══════════════════════════════════════
+function verificarAlertas() {
+  let alertas = [];
+  let pending = 3;
+  const check = () => {
+    if (--pending > 0) return;
+    if (!alertas.length) return;
+    // Mostrar badge en tab Panel
+    const tab = document.querySelector(".tab[onclick*=\"panel\"]");
+    if (tab) tab.innerHTML = `PANEL <span style="background:var(--danger);color:#fff;border-radius:50%;
+      padding:1px 5px;font-size:9px;font-weight:900;">${alertas.length}</span>`;
+    // Toast resumen
+    showToast(`⚠️ ${alertas.length} orden(es) requieren atención`);
+  };
+
+  const revisar = (store, tipo) => {
+    db.transaction(store,"readonly").objectStore(store).getAll().onsuccess = e => {
+      e.target.result.forEach(r => {
+        const dias = diasDesde(r.estadoFechaISO || r.fechaISO);
+        const sem  = semaforo(r.estado, dias);
+        if (sem === "rojo" && r.estado !== "entregado" && r.estado !== "pagado") {
+          alertas.push(r);
+        }
+      });
+      check();
+    };
+  };
+  revisar("ingresos",  "ING");
+  revisar("ordenes",   "OTT");
+  revisar("exteriors", "OTE");
+
+  // Alquileres por vencer
+  getConfig("alquileres", [], lista => {
+    lista.forEach(a => {
+      if (!a.vencimiento) return;
+      const dias = Math.ceil((new Date(a.vencimiento) - new Date()) / (1000*60*60*24));
+      if (dias <= 7) alertas.push({ tipo:"alquiler", desc: a.desc });
+    });
+  });
+}
+
+// ══════════════════════════════════════
+// PWA — manifest + service worker
+// ══════════════════════════════════════
+function registrarPWA() {
+  // Manifest dinámico
+  const manifest = {
+    name: "ELECTROMEL",
+    short_name: "ELECTROMEL",
+    description: "Sistema de gestión - Servicio Técnico",
+    start_url: "./",
+    display: "standalone",
+    background_color: "#0f0f0f",
+    theme_color: "#e8a020",
+    icons: [{
+      src: "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' fill='%230f0f0f'/><text y='.9em' font-size='80' x='10'>⚡</text></svg>",
+      sizes: "192x192", type: "image/svg+xml"
+    }]
+  };
+  const blob = new Blob([JSON.stringify(manifest)], { type: "application/json" });
+  const url  = URL.createObjectURL(blob);
+  const link = document.createElement("link");
+  link.rel   = "manifest"; link.href = url;
+  document.head.appendChild(link);
+
+  // Service Worker básico para caché offline
+  if ("serviceWorker" in navigator) {
+    const swCode = `
+      const CACHE = "electromel-v1";
+      self.addEventListener("install", e => {
+        e.waitUntil(caches.open(CACHE).then(c => c.addAll(["./"])));
+      });
+      self.addEventListener("fetch", e => {
+        e.respondWith(caches.match(e.request).then(r => r || fetch(e.request)));
+      });`;
+    const swBlob = new Blob([swCode], { type: "application/javascript" });
+    const swUrl  = URL.createObjectURL(swBlob);
+    navigator.serviceWorker.register(swUrl).catch(() => {});
+  }
+}
+
+
+
+// ── Visor foto boleta ──
+function verFotoEgreso(dataURL) {
+  document.getElementById("visor-foto-img").src = dataURL;
+  document.getElementById("modal-visor-foto").classList.add("show");
+}
+function cerrarVisorFoto() {
+  document.getElementById("modal-visor-foto").classList.remove("show");
+  document.getElementById("visor-foto-img").src = "";
+}
+
+
+// ==================== INIT ====================
+window.addEventListener("load", () => {
+  initDB();
+  registrarPWA();
+  // Fecha hoy en egreso
+  const hoy = new Date().toISOString().slice(0,10);
+  const egFecha = document.getElementById("egr-fecha");
+  if (egFecha) egFecha.value = hoy;
+  // Alertas con delay para que cargue la DB
+  setTimeout(verificarAlertas, 1500);
+});
+</script>
+</body>
+</html>

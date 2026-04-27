@@ -488,6 +488,48 @@
     gap: 8px;
     margin-bottom: 8px;
   }
+
+  /* ── AGENDA ── */
+  .agenda-dia {
+    margin-bottom: 14px;
+  }
+  .agenda-dia-titulo {
+    font-size: 11px;
+    font-weight: 900;
+    letter-spacing: 2px;
+    color: var(--accent);
+    text-transform: uppercase;
+    padding: 6px 0;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 8px;
+  }
+  .agenda-evento {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-left: 4px solid var(--border);
+    border-radius: var(--radius);
+    padding: 10px 12px;
+    margin-bottom: 8px;
+    cursor: pointer;
+    transition: opacity 0.2s;
+  }
+  .agenda-evento:active { opacity: 0.8; }
+  .agenda-evento.estado-pendiente   { border-left-color: var(--accent); }
+  .agenda-evento.estado-confirmado  { border-left-color: var(--success); }
+  .agenda-evento.estado-realizado   { border-left-color: #555; opacity: 0.7; }
+  .agenda-evento.estado-cancelado   { border-left-color: var(--danger); opacity: 0.6; }
+  .agenda-evento .ev-hora    { font-size: 12px; font-weight: 900; color: var(--accent); }
+  .agenda-evento .ev-cliente { font-size: 14px; font-weight: 900; }
+  .agenda-evento .ev-detalle { font-size: 12px; color: var(--text2); font-weight: 700; margin-top: 2px; }
+  .agenda-alerta {
+    background: var(--surface2);
+    border: 1px solid var(--accent);
+    border-radius: var(--radius);
+    padding: 10px 12px;
+    margin-bottom: 8px;
+    font-size: 12px;
+    font-weight: 900;
+  }
 </style>
 </head>
 <body>
@@ -513,6 +555,7 @@
   <button class="tab" onclick="showTab('ote')">OT EXTERIOR</button>
   <button class="tab" onclick="showTab('panel')">PANEL</button>
   <button class="tab" onclick="showTab('contabilidad')">CONTABILIDAD</button>
+  <button class="tab" onclick="showTab('agenda')">AGENDA</button>
   <button class="tab" onclick="showTab('config')">CONFIG</button>
 </div>
 
@@ -1238,6 +1281,137 @@
 
 </div>
 
+<!-- ==================== AGENDA ==================== -->
+<div id="panel-agenda" class="panel">
+
+  <!-- Cabecera con fecha y navegación -->
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+    <button onclick="agendaCambiarSemana(-1)"
+      style="background:var(--surface2);border:1px solid var(--border);border-radius:4px;
+      color:var(--text);font-family:var(--font);font-size:18px;font-weight:900;
+      padding:6px 14px;cursor:pointer;">‹</button>
+    <div style="text-align:center;">
+      <div style="font-size:13px;font-weight:900;color:var(--accent);" id="agenda-semana-label">Semana</div>
+      <div style="font-size:11px;color:var(--text2);font-weight:700;" id="agenda-semana-rango"></div>
+    </div>
+    <button onclick="agendaCambiarSemana(1)"
+      style="background:var(--surface2);border:1px solid var(--border);border-radius:4px;
+      color:var(--text);font-family:var(--font);font-size:18px;font-weight:900;
+      padding:6px 14px;cursor:pointer;">›</button>
+  </div>
+
+  <!-- Filtros tipo -->
+  <div style="display:flex;gap:6px;margin-bottom:12px;">
+    <button class="toggle-btn active-si" id="ag-filtro-todos" onclick="agendaFiltrar('todos')" style="flex:1;">TODOS</button>
+    <button class="toggle-btn" id="ag-filtro-turno" onclick="agendaFiltrar('turno')" style="flex:1;">TURNOS</button>
+    <button class="toggle-btn" id="ag-filtro-recurrente" onclick="agendaFiltrar('recurrente')" style="flex:1;">FIJOS</button>
+  </div>
+
+  <!-- Alertas próximas 2 días -->
+  <div id="agenda-alertas" style="margin-bottom:12px;"></div>
+
+  <!-- Lista de eventos de la semana -->
+  <div id="agenda-lista"></div>
+
+  <!-- Botón nuevo -->
+  <div style="position:fixed;bottom:24px;right:20px;z-index:150;">
+    <button onclick="abrirNuevoEvento()"
+      style="width:56px;height:56px;border-radius:50%;background:var(--accent);
+      border:none;color:#000;font-size:28px;font-weight:900;cursor:pointer;
+      box-shadow:0 4px 12px rgba(232,160,32,0.5);">+</button>
+  </div>
+
+</div>
+
+<!-- MODAL NUEVO/EDITAR EVENTO -->
+<div class="modal-overlay" id="modal-agenda">
+  <div class="modal" style="max-width:460px;max-height:92vh;overflow-y:auto;">
+    <h3 id="agenda-modal-titulo">📅 NUEVO TURNO</h3>
+
+    <!-- Tipo -->
+    <div class="field">
+      <label>Tipo</label>
+      <div class="toggle-group">
+        <button class="toggle-btn active-si" id="ag-tipo-turno" onclick="agendaSetTipo('turno')">📞 TURNO</button>
+        <button class="toggle-btn" id="ag-tipo-recurrente" onclick="agendaSetTipo('recurrente')">🔁 FIJO</button>
+      </div>
+    </div>
+
+    <!-- Fecha y hora -->
+    <div class="row">
+      <div class="field"><label>Fecha</label>
+        <input type="date" id="ag-fecha" class="estado-select" style="border-color:var(--border);">
+      </div>
+      <div class="field"><label>Hora</label>
+        <input type="time" id="ag-hora" class="estado-select" style="border-color:var(--border);">
+      </div>
+    </div>
+
+    <!-- Recurrencia (solo si tipo=recurrente) -->
+    <div id="ag-recurrencia-wrap" style="display:none;">
+      <div class="field"><label>Frecuencia</label>
+        <select id="ag-frecuencia" class="estado-select" style="border-color:var(--border);">
+          <option value="7">Semanal (cada 7 días)</option>
+          <option value="14">Quincenal (cada 14 días)</option>
+          <option value="30" selected>Mensual (cada 30 días)</option>
+          <option value="60">Bimensual (cada 60 días)</option>
+          <option value="90">Trimestral (cada 90 días)</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- Cliente -->
+    <div class="field"><label>Cliente / Establecimiento</label>
+      <input type="text" id="ag-cliente" placeholder="Nombre del cliente o lugar">
+    </div>
+    <div class="field"><label>Teléfono</label>
+      <input type="tel" id="ag-tel" placeholder="299XXXXXXX">
+    </div>
+    <div class="field"><label>Dirección</label>
+      <input type="text" id="ag-direccion" placeholder="Calle y número">
+    </div>
+
+    <!-- Tipo de servicio -->
+    <div class="field"><label>Tipo de Servicio</label>
+      <select id="ag-servicio" class="estado-select" style="border-color:var(--border);">
+        <option value="">— Seleccionar —</option>
+        <option>Soldadora Inverter</option>
+        <option>Monopatín Eléctrico</option>
+        <option>Máquina Gym</option>
+        <option>Cinta de Correr</option>
+        <option>Máquina Eléctrica</option>
+        <option>Servicio de Urgencia</option>
+        <option>Instalaciones Eléctricas</option>
+        <option>Mantenimiento</option>
+        <option>Asesoramiento</option>
+        <option>Otro</option>
+      </select>
+    </div>
+
+    <!-- Notas -->
+    <div class="field"><label>Notas</label>
+      <textarea id="ag-notas" placeholder="Observaciones, materiales a llevar..." style="min-height:60px;"></textarea>
+    </div>
+
+    <!-- Estado -->
+    <div class="field"><label>Estado</label>
+      <select id="ag-estado" class="estado-select" style="border-color:var(--border);">
+        <option value="pendiente">⏳ Pendiente</option>
+        <option value="confirmado">✅ Confirmado</option>
+        <option value="realizado">🏁 Realizado</option>
+        <option value="cancelado">❌ Cancelado</option>
+      </select>
+    </div>
+
+    <div class="modal-btns" style="margin-top:14px;">
+      <button class="btn btn-primary" onclick="guardarEvento()">💾 GUARDAR</button>
+      <button class="btn btn-whatsapp" id="ag-btn-wa" onclick="whatsappRecordatorio()" style="display:none;">📲 RECORDATORIO WA</button>
+      <button class="btn btn-secondary" id="ag-btn-ote" onclick="crearOTEdesdeAgenda()" style="display:none;">📋 CREAR OTE</button>
+      <button class="btn btn-secondary" onclick="cerrarAgendaModal()">CANCELAR</button>
+    </div>
+  </div>
+</div>
+
 <!-- ==================== CONFIGURACIONES ==================== -->
 <div id="panel-config" class="panel">
 
@@ -1373,6 +1547,29 @@
       <input type="file" id="backup-import-file" accept=".json" style="display:none"
         onchange="importarBackup(this)">
       <div id="backup-status" style="font-size:12px;font-weight:900;color:var(--text2);text-align:center;min-height:18px;margin-top:6px;"></div>
+    </div>
+  </div>
+
+  <!-- Escala de impresión -->
+  <div class="card">
+    <div class="card-title">🖨️ Escala de Impresión</div>
+    <div class="card-body">
+      <p style="font-size:12px;color:var(--text2);font-weight:700;margin-bottom:10px;">
+        Ajustá el tamaño de las letras del Ticket y la Etiqueta según tu impresora.
+        Valores recomendados: Ticket 13-20 · Etiqueta 16-24
+      </p>
+      <div class="row">
+        <div class="field">
+          <label>Escala Ticket</label>
+          <input type="number" id="cfg-scale-ticket" min="6" max="30" placeholder="20"
+            style="text-align:center;font-size:18px;">
+        </div>
+        <div class="field">
+          <label>Escala Etiqueta</label>
+          <input type="number" id="cfg-scale-etiqueta" min="8" max="40" placeholder="24"
+            style="text-align:center;font-size:18px;">
+        </div>
+      </div>
     </div>
   </div>
 
@@ -1590,6 +1787,10 @@
 
 <script>
 // ==================== CONFIG DATOS EMPRESA ====================
+// Scales globales (se actualizan desde Config)
+let SCALE_TICKET   = 20;
+let SCALE_ETIQUETA = 24;
+
 const EMPRESA = {
   nombre: "ELECTROMEL",
   sub: "Servicio Técnico especializado soldadoras inverter",
@@ -1674,6 +1875,7 @@ function showTab(name) {
   }
   if (name === "config") { cargarConfig(); cargarConfigDrive(); }
   if (name === "contabilidad") { calcularContabilidad(); cargarAlquileres(); cargarStock(); }
+  if (name === "agenda") { agendaSemanaOffset = 0; agendaFiltrar("todos"); renderAgenda(); }
 }
 
 // ==================== ENCOMIENDA TOGGLE ====================
@@ -1729,7 +1931,7 @@ function guardarIngreso() {
       numero,
       fechaISO: fecha.toISOString(),
       fechaStr: fecha.toLocaleDateString("es-AR"),
-      horaStr: fecha.toLocaleTimeString("es-AR", { hour: "2-digit", minute: "2-digit" }),
+      horaStr: fecha.toLocaleTimeString("es-AR", { hour: "2-digit", minute: "2-digit", hour12: false }),
       estado: "ingresado",
       ...data
     };
@@ -1756,7 +1958,7 @@ function vistaPrevia() {
     ultimoIngreso = {
       numero: "ING-" + formatNum(n),
       fechaStr: fecha.toLocaleDateString("es-AR"),
-      horaStr: fecha.toLocaleTimeString("es-AR", { hour: "2-digit", minute: "2-digit" }),
+      horaStr: fecha.toLocaleTimeString("es-AR", { hour: "2-digit", minute: "2-digit", hour12: false }),
       ...data
     };
     document.getElementById("modal-num-texto").textContent = "VISTA PREVIA — " + ultimoIngreso.numero;
@@ -1777,31 +1979,39 @@ function imprimirPDFA4() {
   const W = 210;
   let y = 15;
 
-  // ENCABEZADO — gris oscuro, datos legibles
+  // ENCABEZADO PDF A4 — sin QR, datos centrados y limpios
+  const encH = 50;
   doc.setFillColor(55, 55, 55);
-  doc.rect(0, 0, W, 42, "F");
+  doc.rect(0, 0, W, encH, "F");
 
+  // ELECTROMEL
   doc.setTextColor(232, 160, 32);
-  doc.setFontSize(28);
+  doc.setFontSize(30);
   doc.setFont("helvetica", "bold");
-  doc.text("ELECTROMEL", W / 2, y + 8, { align: "center" });
+  doc.text("ELECTROMEL", W / 2, 12, { align: "center" });
 
-  doc.setTextColor(220, 220, 220);
+  // Subtítulo
+  doc.setTextColor(210, 210, 210);
   doc.setFontSize(10);
   doc.setFont("helvetica", "normal");
-  doc.text(EMPRESA.sub, W / 2, y + 16, { align: "center" });
+  doc.text(EMPRESA.sub, W / 2, 20, { align: "center" });
 
-  // Datos empresa — blanco claro para que se lean bien
+  // Línea 1: CUIT | IIBB | IVA
   doc.setFontSize(8.5);
   doc.setTextColor(255, 255, 255);
-  const emp1 = `CUIT: ${EMPRESA.cuit}  |  IIBB: ${EMPRESA.iibb}  |  ${EMPRESA.iva}`;
-  const emp2 = `${EMPRESA.domicilio} · ${EMPRESA.ciudad}  |  Tel: ${EMPRESA.tel}  |  ${EMPRESA.email}`;
-  doc.text(emp1, W / 2, y + 24, { align: "center" });
-  doc.text(emp2, W / 2, y + 30, { align: "center" });
+  doc.setFont("helvetica", "bold");
+  doc.text(`CUIT: ${EMPRESA.cuit}  |  IIBB: ${EMPRESA.iibb}  |  ${EMPRESA.iva}`, W / 2, 28, { align: "center" });
 
-  y = 48;
+  // Línea 2: Dirección
+  doc.setFont("helvetica", "normal");
+  doc.text("Anaya 140, Neuquén Capital", W / 2, 35, { align: "center" });
 
-  // Línea separadora
+  // Línea 3: Tel y Email
+  doc.text("Tel: 2994116753  |  electromelnqn@gmail.com", W / 2, 42, { align: "center" });
+
+  y = 54; // después del encabezado gris (encH=50) + margen
+
+  // Línea separadora dorada — DEBAJO del encabezado
   doc.setDrawColor(232, 160, 32);
   doc.setLineWidth(0.5);
   doc.line(10, y, W - 10, y);
@@ -1923,7 +2133,7 @@ function campoPDF(doc, label, valor, x, y) {
 // ==================== TICKET 57x220mm ====================
 function imprimirTicket() {
   const d = ultimoIngreso;
-  const SCALE = 5; // más resolución = letras más gruesas
+  const SCALE = SCALE_TICKET;
   const W_MM = 57, H_MM = 250;
   const W_PX = Math.round(W_MM * SCALE * 96 / 25.4);
   const H_PX = Math.round(H_MM * SCALE * 96 / 25.4);
@@ -1955,68 +2165,67 @@ function imprimirTicket() {
       const prueba = linea + w + " ";
       if (ctx.measureText(prueba).width > maxW && linea) {
         ctx.fillText(linea.trim(), xPos, y);
-        y += px * 1.5;
+        y += px * 1.45;
         linea = w + " ";
       } else { linea = prueba; }
     }
     ctx.fillText(linea.trim(), xPos, y);
-    y += px * 1.5;
+    y += px * 1.45;
   }
 
   function esp(mm) { y += mm * SCALE; }
 
   function sep(label) {
-    esp(5);
+    esp(4);
     txt("─── " + label + " ───", 8, true, true);
     esp(3);
   }
 
   function firma(label) {
-    txt(label, 9, true, false);
-    esp(18);
+    txt(label, 10, true, false);
+    esp(20);
     ctx.strokeStyle = "#000";
     ctx.lineWidth = 2 * SCALE;
     ctx.beginPath();
     ctx.moveTo(PAD, y);
     ctx.lineTo(W_PX - PAD, y);
     ctx.stroke();
-    esp(14);
+    esp(16);
   }
 
-  // ── ENCABEZADO ──
   txt("ELECTROMEL", 20, true, true);
   esp(2);
-  txt("Servicio Técnico", 9, false, true);
-  txt("Soldadoras Inverter", 9, false, true);
+  txt("Servicio Técnico", 11, false, true);
+  txt("Soldadoras Inverter", 11, false, true);
   esp(4);
-  txt(`CUIT: ${EMPRESA.cuit}`, 8, false, true);
-  txt(`IIBB: ${EMPRESA.iibb}`, 8, false, true);
-  txt(`${EMPRESA.domicilio} · ${EMPRESA.ciudad}`, 8, false, true);
-  txt(`Tel: ${EMPRESA.tel}`, 8, false, true);
-  txt(EMPRESA.email, 7.5, false, true);
-  esp(6);
+  txt(`CUIT: ${EMPRESA.cuit}`, 9.5, false, true);
+  txt(`IIBB: ${EMPRESA.iibb}`, 9.5, false, true);
+  txt("Anaya 140, Neuquén Capital", 9.5, false, true);
+  txt("Tel: 2994116753", 9.5, false, true);
+  txt("electromelnqn@gmail.com", 9, false, true);
+  esp(5);
 
   sep("RECIBO DE INGRESO");
-  txt(`N°: ${d.numero}`, 16, true, true);
+  txt(`N°: ${d.numero}`, 17, true, true);
   esp(2);
-  txt(`Fecha: ${d.fechaStr}   Hora: ${horaStr}`, 9, false, true);
-  esp(6);
+  txt(`Fecha: ${d.fechaStr}   Hora: ${horaStr}`, 10, false, true);
+  esp(5);
 
   sep("CLIENTE");
-  txt(`Cliente: ${d.cliente||"—"}`, 11, true, false);
-  if (d.cuit)      txt(`CUIT/DNI: ${d.cuit}`, 9.5, false, false);
-  if (d.tel)       txt(`Tel: ${d.tel}`, 9.5, false, false);
-  if (d.direccion) txt(`Dir: ${d.direccion}`, 9.5, false, false);
-  if (d.ciudad)    txt(`${d.ciudad}  CP: ${d.cp||""}`, 9.5, false, false);
-  if (d.provincia) txt(`Provincia: ${d.provincia}`, 9.5, false, false);
-  esp(6);
+  txt(`Cliente: ${d.cliente||"—"}`, 12, true, false);
+  if (d.cuit)      txt(`CUIT/DNI: ${d.cuit}`, 10, false, false);
+  if (d.tel)       txt(`Tel: ${d.tel}`, 10, false, false);
+  if (d.direccion) txt(`Dir: ${d.direccion}`, 10, false, false);
+  if (d.ciudad)    txt(`${d.ciudad}  CP: ${d.cp||""}`, 10, false, false);
+  if (d.provincia) txt(`Provincia: ${d.provincia}`, 10, false, false);
+  esp(5);
 
   sep("EQUIPO");
-  txt(`Equipo: ${d.equipo||"—"}`, 11, true, false);
-  if (d.modelo) txt(`Marca/Modelo: ${d.modelo}`, 9.5, false, false);
-  if (d.falla) { txt("Falla declarada:", 9.5, true, false); txt(d.falla, 9.5, false, false); }
-  if (d.error) txt(`Error: ${d.error}`, 9.5, false, false);
-  esp(6);
+  txt(`Equipo: ${d.equipo||"—"}`, 12, true, false);
+  if (d.modelo) txt(`Marca/Modelo: ${d.modelo}`, 10, false, false);
+  if (d.falla) { txt("Falla declarada:", 10, true, false); txt(d.falla, 10, false, false); }
+  if (d.error) txt(`Error: ${d.error}`, 10, false, false);
+  esp(5);
 
   sep("CONDICIONES DEL SERVICIO");
   [
@@ -2026,17 +2235,16 @@ function imprimirTicket() {
     "- Retirar en 30 días o se cobra almacenamiento",
     "- Pasados 120 días: abandono del equipo",
   ].forEach(c => txt(c, 9, false, false));
-  esp(8);
+  esp(7);
 
   firma("Firma cliente:");
   firma("Aclaración:");
   firma("Fecha:");
-  esp(6);
+  esp(5);
 
   txt("GRACIAS POR CONFIAR EN ELECTROMEL 😊", 10, true, true);
-  esp(20);
+  esp(18);
 
-  // Recortar al contenido real
   const fin = document.createElement("canvas");
   fin.width  = W_PX;
   fin.height = Math.min(y, H_PX);
@@ -2052,10 +2260,15 @@ function imprimirTicket() {
 
 
 
+
+
+
+
+
 // ==================== ETIQUETA 55x30mm ====================
 function imprimirEtiqueta() {
   const d = ultimoIngreso;
-  const SCALE = 11; // alta resolución
+  const SCALE = SCALE_ETIQUETA;
   const W_MM = 55, H_MM = 30;
   const W_PX = Math.round(W_MM * SCALE * 96 / 25.4);
   const H_PX = Math.round(H_MM * SCALE * 96 / 25.4);
@@ -2063,14 +2276,13 @@ function imprimirEtiqueta() {
   const telLimpio = (d.tel || "").replace(/\D/g, "");
   const waURL = telLimpio ? `https://wa.me/549${telLimpio}` : `https://wa.me/549${EMPRESA.tel}`;
 
-  const qrPX = Math.round(H_PX * 0.80);
+  const qrPX = Math.round(H_PX * 0.82);
   const qrDiv = document.createElement("div");
   qrDiv.style.cssText = "position:fixed;left:-9999px;top:0;";
   document.body.appendChild(qrDiv);
 
   new QRCode(qrDiv, {
-    text: waURL,
-    width: qrPX, height: qrPX,
+    text: waURL, width: qrPX, height: qrPX,
     colorDark: "#000000", colorLight: "#ffffff",
     correctLevel: QRCode.CorrectLevel.M,
   });
@@ -2088,18 +2300,16 @@ function imprimirEtiqueta() {
     ctx.lineWidth = 3 * SCALE;
     ctx.strokeRect(3, 3, W_PX - 6, H_PX - 6);
 
-    // QR lado derecho
     const margen = 4 * SCALE;
     const qrX = W_PX - qrPX - margen;
     const qrY = Math.round((H_PX - qrPX) / 2);
     if (qrSrc) ctx.drawImage(qrSrc, qrX, qrY, qrPX, qrPX);
 
     ctx.fillStyle = "#000";
-    ctx.font = `bold ${4 * SCALE}px "Courier New"`;
+    ctx.font = `bold ${4.5 * SCALE}px "Courier New"`;
     ctx.textAlign = "center";
-    ctx.fillText("WhatsApp", qrX + qrPX / 2, qrY + qrPX + 5 * SCALE);
+    ctx.fillText("WhatsApp", qrX + qrPX / 2, qrY + qrPX + 6 * SCALE);
 
-    // Texto lado izquierdo — letras MÁS GRANDES
     const txtMaxW = qrX - 6 * SCALE;
     const PAD = 5 * SCALE;
     let y = 14 * SCALE;
@@ -2116,13 +2326,12 @@ function imprimirEtiqueta() {
       y += px * 1.45;
     }
 
-    // Tamaños 2.5x más grandes que antes (antes: 5.5, 4.5, 4, 3.5)
-    dt("ELECTROMEL",       8,   true);
-    dt(d.numero,           7,   true);
-    dt(d.cliente || "—",   6.5, true);
-    dt(`Tel: ${d.tel||""}`,5.5, false);
-    dt(d.equipo || "—",    5.5, true);
-    if (d.modelo) dt(d.modelo, 5, false);
+    dt("ELECTROMEL",       7,   true);
+    dt(d.numero,           6,   true);
+    dt(d.cliente || "—",   6,   true);
+    dt(`Tel: ${d.tel||""}`,5,   false);
+    dt(d.equipo || "—",    5,   true);
+    if (d.modelo) dt(d.modelo, 4.5, false);
 
     document.body.removeChild(qrDiv);
 
@@ -2135,6 +2344,11 @@ function imprimirEtiqueta() {
 
   setTimeout(dibujar, 250);
 }
+
+
+
+
+
 
 
 
@@ -2169,8 +2383,10 @@ function initDB() {
     cargarNumeroOTT();
     cargarNumeroOTE();
     filtrarPanel("todos");
-    // Cargar config guardada al iniciar
     cargarConfigEnMemoria();
+    // Cargar scales
+    getConfig("scaleTicket",   20, v => { SCALE_TICKET   = parseInt(v)||20; });
+    getConfig("scaleEtiqueta", 24, v => { SCALE_ETIQUETA = parseInt(v)||24; });
   };
   req.onerror = () => console.error("Error abriendo DB");
 }
@@ -3294,6 +3510,9 @@ function cargarConfig() {
       if (--pending === 0) cargarWAConfig();
     });
   });
+  // Cargar scales
+  getConfig("scaleTicket",   20, v => { const el = document.getElementById("cfg-scale-ticket");   if(el) el.value = v; });
+  getConfig("scaleEtiqueta", 24, v => { const el = document.getElementById("cfg-scale-etiqueta"); if(el) el.value = v; });
 }
 
 function cargarWAConfig() {
@@ -3372,6 +3591,12 @@ function guardarConfig() {
     const el = document.getElementById("wa-" + key);
     if (el) setConfig("wa_" + key, el.value);
   });
+
+  // Guardar scales y actualizar variables globales
+  const st = document.getElementById("cfg-scale-ticket")?.value;
+  const se = document.getElementById("cfg-scale-etiqueta")?.value;
+  if (st) { setConfig("scaleTicket",   parseInt(st)); SCALE_TICKET   = parseInt(st); }
+  if (se) { setConfig("scaleEtiqueta", parseInt(se)); SCALE_ETIQUETA = parseInt(se); }
 
   showToast("✅ Configuración guardada");
 }
@@ -3748,19 +3973,36 @@ function actualizarEstadoDrive(key, clientid, folder) {
   }
 }
 
-function testDriveConexion() {
+async function testDriveConexion() {
   const el = document.getElementById("drive-estado");
-  getConfig("driveKey","", key => {
-    getConfig("driveClientId","", cid => {
-      getConfig("driveFolder","", folder => {
-        if (!key || !cid || !folder) {
-          if (el) el.innerHTML = '🔴 <span style="color:var(--danger);">Completá los datos primero</span>';
-          return;
-        }
-        if (el) el.innerHTML = '🟡 <span style="color:var(--accent);">Para probar la conexión real necesitás abrir la app desde un servidor web (no como archivo local). Guardá los datos y usalos cuando la app esté hosteada.</span>';
-      });
-    });
-  });
+  const key = await getConfigAsync("driveKey", "");
+  const cid = await getConfigAsync("driveClientId", "");
+  const folder = await getConfigAsync("driveFolder", "");
+
+  if (!key || !cid || !folder) {
+    if (el) el.innerHTML = '🔴 <span style="color:var(--danger);">Completá los datos primero</span>';
+    return;
+  }
+
+  if (el) el.innerHTML = '🔄 <span style="color:var(--accent);">Conectando con Google...</span>';
+
+  try {
+    const token = await obtenerTokenDrive(cid);
+    if (!token) throw new Error("No se obtuvo token");
+    // Verificar acceso a la carpeta
+    const resp = await fetch(
+      `https://www.googleapis.com/drive/v3/files/${folder}?fields=name`,
+      { headers: { Authorization: "Bearer " + token } }
+    );
+    const data = await resp.json();
+    if (data.name) {
+      if (el) el.innerHTML = `✅ <span style="color:var(--success);">Conectado a Drive — Carpeta: ${data.name}</span>`;
+    } else {
+      throw new Error("No se pudo acceder a la carpeta");
+    }
+  } catch(err) {
+    if (el) el.innerHTML = `🔴 <span style="color:var(--danger);">Error: ${err.message}</span>`;
+  }
 }
 
 function cargarConfigDrive() {
@@ -4739,6 +4981,310 @@ function reimprimir(tipo) {
     ultimoOTE = r;
     imprimirPDFOTE();
   }
+}
+
+
+
+// ==================== AGENDA ====================
+
+let agendaFiltroActual = "todos";
+let agendaSemanaOffset = 0;
+let agendaEventoEditar  = null;
+let agendaTipoActual    = "turno";
+
+// ── Helpers de fecha ──
+function getLunes(offset = 0) {
+  const hoy = new Date();
+  const dia = hoy.getDay() || 7;
+  const lunes = new Date(hoy);
+  lunes.setDate(hoy.getDate() - dia + 1 + offset * 7);
+  lunes.setHours(0,0,0,0);
+  return lunes;
+}
+
+function formatFecha(d) {
+  return d.toLocaleDateString("es-AR", { weekday:"short", day:"2-digit", month:"2-digit" });
+}
+
+function fechaISO(d) {
+  return d.toISOString().slice(0,10);
+}
+
+// ── DB ──
+function getAgenda(cb) {
+  getConfig("agendaEventos", [], cb);
+}
+function saveAgenda(eventos) {
+  setConfig("agendaEventos", eventos);
+}
+
+// ── Navegación semana ──
+function agendaCambiarSemana(dir) {
+  agendaSemanaOffset += dir;
+  renderAgenda();
+}
+
+function agendaFiltrar(tipo) {
+  agendaFiltroActual = tipo;
+  ["todos","turno","recurrente"].forEach(t => {
+    const el = document.getElementById("ag-filtro-" + t);
+    if (el) el.className = "toggle-btn" + (t === tipo ? " active-si" : "");
+  });
+  renderAgenda();
+}
+
+// ── Render principal ──
+function renderAgenda() {
+  const lunes = getLunes(agendaSemanaOffset);
+  const domingo = new Date(lunes); domingo.setDate(lunes.getDate() + 6);
+
+  const label = document.getElementById("agenda-semana-label");
+  const rango = document.getElementById("agenda-semana-rango");
+  if (label) label.textContent = agendaSemanaOffset === 0 ? "ESTA SEMANA" :
+                                  agendaSemanaOffset === 1 ? "PRÓXIMA SEMANA" :
+                                  agendaSemanaOffset === -1 ? "SEMANA PASADA" : `Semana ${agendaSemanaOffset > 0 ? "+" : ""}${agendaSemanaOffset}`;
+  if (rango) rango.textContent = `${lunes.toLocaleDateString("es-AR")} — ${domingo.toLocaleDateString("es-AR")}`;
+
+  getAgenda(eventos => {
+    // Generar ocurrencias de recurrentes en la semana
+    const ocurrencias = generarOcurrencias(eventos, lunes, domingo);
+
+    // Filtrar
+    const filtrados = ocurrencias.filter(e =>
+      agendaFiltroActual === "todos" ? true : e.tipo === agendaFiltroActual
+    );
+
+    // Agrupar por día
+    const dias = {};
+    for (let i = 0; i < 7; i++) {
+      const d = new Date(lunes); d.setDate(lunes.getDate() + i);
+      dias[fechaISO(d)] = [];
+    }
+    filtrados.forEach(e => {
+      if (dias[e.fechaOcurrencia]) dias[e.fechaOcurrencia].push(e);
+    });
+
+    // Render
+    const lista = document.getElementById("agenda-lista");
+    if (!lista) return;
+    const hoyISO = fechaISO(new Date());
+    let html = "";
+
+    Object.entries(dias).forEach(([fecha, evs]) => {
+      const d = new Date(fecha + "T12:00:00");
+      const esHoy = fecha === hoyISO;
+      evs.sort((a,b) => (a.hora||"").localeCompare(b.hora||""));
+
+      html += `<div class="agenda-dia">
+        <div class="agenda-dia-titulo" style="${esHoy ? "color:var(--success);" : ""}">
+          ${esHoy ? "📍 HOY — " : ""}${formatFecha(d)}
+          ${evs.length ? `<span style="float:right;color:var(--text2);">${evs.length} evento${evs.length>1?"s":""}</span>` : ""}
+        </div>`;
+
+      if (!evs.length) {
+        html += `<div style="color:var(--text2);font-size:12px;font-weight:700;padding:4px 0;">Sin eventos</div>`;
+      } else {
+        evs.forEach(e => {
+          html += `
+            <div class="agenda-evento estado-${e.estado}" onclick="editarEvento('${e.id}','${e.fechaOcurrencia}')">
+              <div style="display:flex;justify-content:space-between;align-items:center;">
+                <span class="ev-hora">${e.hora||"Todo el día"} ${e.tipo==="recurrente"?"🔁":""}</span>
+                <span style="font-size:10px;font-weight:900;color:var(--text2);">${e.estado.toUpperCase()}</span>
+              </div>
+              <div class="ev-cliente">${e.cliente||"—"}</div>
+              <div class="ev-detalle">${e.servicio||""} ${e.direccion ? "· "+e.direccion : ""}</div>
+            </div>`;
+        });
+      }
+      html += `</div>`;
+    });
+
+    lista.innerHTML = html;
+    renderAlertasAgenda(eventos);
+  });
+}
+
+// ── Generar ocurrencias de recurrentes ──
+function generarOcurrencias(eventos, desde, hasta) {
+  const resultado = [];
+  eventos.forEach(e => {
+    if (e.tipo === "turno") {
+      const f = new Date(e.fecha + "T12:00:00");
+      if (f >= desde && f <= hasta) {
+        resultado.push({ ...e, fechaOcurrencia: e.fecha });
+      }
+    } else if (e.tipo === "recurrente") {
+      // Generar todas las ocurrencias en el rango
+      let f = new Date(e.fecha + "T12:00:00");
+      const frec = parseInt(e.frecuencia) || 30;
+      // Avanzar hasta el rango
+      while (f < desde) { f.setDate(f.getDate() + frec); }
+      while (f <= hasta) {
+        resultado.push({ ...e, fechaOcurrencia: fechaISO(f) });
+        f.setDate(f.getDate() + frec);
+      }
+    }
+  });
+  return resultado;
+}
+
+// ── Alertas próximos 2 días ──
+function renderAlertasAgenda(eventos) {
+  const cont = document.getElementById("agenda-alertas");
+  if (!cont) return;
+  const hoy   = new Date(); hoy.setHours(0,0,0,0);
+  const limite = new Date(hoy); limite.setDate(hoy.getDate() + 2);
+
+  const proximos = generarOcurrencias(eventos, hoy, limite)
+    .filter(e => e.estado === "pendiente" || e.estado === "confirmado");
+
+  if (!proximos.length) { cont.innerHTML = ""; return; }
+
+  cont.innerHTML = proximos.map(e => `
+    <div class="agenda-alerta">
+      ⚠️ <b>${e.cliente}</b> — ${e.fechaOcurrencia === fechaISO(hoy) ? "HOY" : "MAÑANA"} ${e.hora||""}
+      ${e.servicio ? " · " + e.servicio : ""}
+      ${e.tel ? `<button onclick="whatsappRecordatorioRapido('${e.tel}','${e.cliente}','${e.fechaOcurrencia}','${e.hora||""}')"
+        style="float:right;background:var(--success);border:none;border-radius:4px;
+        color:#000;font-weight:900;font-size:11px;padding:3px 8px;cursor:pointer;">📲 WA</button>` : ""}
+    </div>`).join("");
+}
+
+// ── Modal nuevo/editar ──
+function abrirNuevoEvento() {
+  agendaEventoEditar = null;
+  document.getElementById("agenda-modal-titulo").textContent = "📅 NUEVO TURNO";
+  // Defaults
+  const hoy = new Date().toISOString().slice(0,10);
+  const hora = new Date().toLocaleTimeString("es-AR",{hour:"2-digit",minute:"2-digit",hour12:false});
+  document.getElementById("ag-fecha").value    = hoy;
+  document.getElementById("ag-hora").value     = hora;
+  document.getElementById("ag-cliente").value  = "";
+  document.getElementById("ag-tel").value      = "";
+  document.getElementById("ag-direccion").value= "";
+  document.getElementById("ag-servicio").value = "";
+  document.getElementById("ag-notas").value    = "";
+  document.getElementById("ag-estado").value   = "pendiente";
+  document.getElementById("ag-frecuencia").value = "30";
+  document.getElementById("ag-btn-wa").style.display  = "none";
+  document.getElementById("ag-btn-ote").style.display = "none";
+  agendaSetTipo("turno");
+  document.getElementById("modal-agenda").classList.add("show");
+}
+
+function editarEvento(id, fechaOcurrencia) {
+  getAgenda(eventos => {
+    const e = eventos.find(x => x.id === id);
+    if (!e) return;
+    agendaEventoEditar = { ...e, fechaOcurrencia };
+    document.getElementById("agenda-modal-titulo").textContent = "✏️ EDITAR EVENTO";
+    document.getElementById("ag-fecha").value     = fechaOcurrencia || e.fecha;
+    document.getElementById("ag-hora").value      = e.hora || "";
+    document.getElementById("ag-cliente").value   = e.cliente || "";
+    document.getElementById("ag-tel").value       = e.tel || "";
+    document.getElementById("ag-direccion").value = e.direccion || "";
+    document.getElementById("ag-servicio").value  = e.servicio || "";
+    document.getElementById("ag-notas").value     = e.notas || "";
+    document.getElementById("ag-estado").value    = e.estado || "pendiente";
+    document.getElementById("ag-frecuencia").value= e.frecuencia || "30";
+    // Mostrar botones extra si tiene teléfono o está realizado
+    document.getElementById("ag-btn-wa").style.display  = e.tel ? "block" : "none";
+    document.getElementById("ag-btn-ote").style.display = e.estado === "realizado" ? "block" : "none";
+    agendaSetTipo(e.tipo || "turno");
+    document.getElementById("modal-agenda").classList.add("show");
+  });
+}
+
+function agendaSetTipo(tipo) {
+  agendaTipoActual = tipo;
+  document.getElementById("ag-tipo-turno").className      = "toggle-btn" + (tipo==="turno"      ?" active-si":"");
+  document.getElementById("ag-tipo-recurrente").className = "toggle-btn" + (tipo==="recurrente" ?" active-si":"");
+  document.getElementById("ag-recurrencia-wrap").style.display = tipo === "recurrente" ? "block" : "none";
+}
+
+function cerrarAgendaModal() {
+  document.getElementById("modal-agenda").classList.remove("show");
+  agendaEventoEditar = null;
+}
+
+// ── Guardar evento ──
+function guardarEvento() {
+  const fecha    = document.getElementById("ag-fecha").value;
+  const cliente  = document.getElementById("ag-cliente").value.trim();
+  if (!fecha || !cliente) { showToast("⚠️ Completá fecha y cliente"); return; }
+
+  getAgenda(eventos => {
+    const ev = {
+      id:         agendaEventoEditar?.id || "ev_" + Date.now(),
+      tipo:       agendaTipoActual,
+      fecha:      agendaEventoEditar?.tipo === "recurrente" ? agendaEventoEditar.fecha : fecha,
+      hora:       document.getElementById("ag-hora").value,
+      cliente:    cliente,
+      tel:        document.getElementById("ag-tel").value.trim(),
+      direccion:  document.getElementById("ag-direccion").value.trim(),
+      servicio:   document.getElementById("ag-servicio").value,
+      notas:      document.getElementById("ag-notas").value.trim(),
+      estado:     document.getElementById("ag-estado").value,
+      frecuencia: document.getElementById("ag-frecuencia").value,
+      creadoISO:  agendaEventoEditar?.creadoISO || new Date().toISOString(),
+    };
+
+    if (agendaEventoEditar) {
+      const idx = eventos.findIndex(x => x.id === ev.id);
+      if (idx >= 0) eventos[idx] = ev;
+      else eventos.push(ev);
+    } else {
+      eventos.push(ev);
+    }
+
+    saveAgenda(eventos);
+    showToast("✅ Evento guardado");
+    cerrarAgendaModal();
+    renderAgenda();
+  });
+}
+
+// ── WhatsApp recordatorio ──
+function whatsappRecordatorio() {
+  const tel    = document.getElementById("ag-tel").value.replace(/\D/g,"");
+  const cliente= document.getElementById("ag-cliente").value;
+  const fecha  = document.getElementById("ag-fecha").value;
+  const hora   = document.getElementById("ag-hora").value;
+  const servicio= document.getElementById("ag-servicio").value;
+  if (!tel) { showToast("⚠️ Sin teléfono"); return; }
+  const fechaStr = new Date(fecha+"T12:00:00").toLocaleDateString("es-AR");
+  const texto = encodeURIComponent(
+    `Hola ${cliente}, le recuerdo que el *${fechaStr}* a las *${hora}hs* pasamos por su establecimiento` +
+    (servicio ? ` para el servicio de *${servicio}*` : "") +
+    `.\n\nCualquier consulta estamos a disposición.\n\nSaludos, Mauro — ELECTROMEL ⚡`
+  );
+  window.open(`https://wa.me/549${tel}?text=${texto}`, "_blank");
+}
+
+function whatsappRecordatorioRapido(tel, cliente, fecha, hora) {
+  const telLimpio = tel.replace(/\D/g,"");
+  const fechaStr  = new Date(fecha+"T12:00:00").toLocaleDateString("es-AR");
+  const texto = encodeURIComponent(
+    `Hola ${cliente}, le recuerdo que el *${fechaStr}* ${hora ? "a las *"+hora+"hs*" : ""} pasamos por su establecimiento para el mantenimiento programado.\n\nSaludos, Mauro — ELECTROMEL ⚡`
+  );
+  window.open(`https://wa.me/549${telLimpio}?text=${texto}`, "_blank");
+}
+
+// ── Crear OTE desde agenda ──
+function crearOTEdesdeAgenda() {
+  const e = agendaEventoEditar;
+  if (!e) return;
+  // Precargar datos en OTE
+  cerrarAgendaModal();
+  showTab("ote");
+  // Esperar que el panel esté visible
+  setTimeout(() => {
+    document.getElementById("ote-cliente").value   = e.cliente || "";
+    document.getElementById("ote-tel").value       = e.tel || "";
+    document.getElementById("ote-direccion").value = e.direccion || "";
+    document.getElementById("ote-equipo").value    = e.servicio || "";
+    showToast("✅ Datos cargados en OT Exterior");
+  }, 200);
 }
 
 
